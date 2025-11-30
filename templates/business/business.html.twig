@@ -1,0 +1,167 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Businesses{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1>Gestion des Businesses</h1>
+
+        <!-- Bouton Ajouter Business -->
+        <button class="btn btn-primary mb-3" onclick="openAddModal()">Ajouter Business</button>
+
+        <!-- Liste des Businesses -->
+        <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Adresse</th>
+                <th>Téléphone</th>
+                <th>Site Web</th>
+                <th>Owner</th>
+                <th>Catégorie</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for business in businesses %}
+                <tr>
+                    <td>{{ business.name }}</td>
+                    <td>{{ business.address }}</td>
+                    <td>{{ business.phone }}</td>
+                    <td>{{ business.website }}</td>
+                    <td>{{ business.owner ? business.owner.name : '' }}</td>
+                    <td>{{ business.category ? business.category.name : '' }}</td>
+                    <td>
+                        <button class="btn btn-warning btn-sm"
+                                onclick="openEditModal(
+                                {{ business.id }},
+                                        '{{ business.name|e('js') }}',
+                                        '{{ business.address|e('js') }}',
+                                        '{{ business.phone|e('js') }}',
+                                        '{{ business.website|e('js') }}',
+                                {{ business.owner ? business.owner.id : 'null' }},
+                                {{ business.category ? business.category.id : 'null' }},
+                                        '{{ business.description|e('js') }}'
+                                        )">
+                            Modifier
+                        </button>
+                        <a href="{{ path('business_delete', {'id': business.id}) }}" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Voulez-vous vraiment supprimer ce business ?');">
+                            Supprimer
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="text-center">Aucun business trouvé</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal Ajout / Modification -->
+    <div class="modal fade" id="businessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="businessForm" method="POST" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Ajouter Business</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="formAlert"></div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Adresse</label>
+                            <input type="text" class="form-control" id="address" name="address" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Téléphone</label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="website" class="form-label">Site Web</label>
+                            <input type="text" class="form-control" id="website" name="website">
+                        </div>
+                        <div class="mb-3">
+                            <label for="owner" class="form-label">Owner</label>
+                            <select class="form-select" id="owner" name="owner" required>
+                                <option value="">-- Choisir un owner --</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Catégorie</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">-- Choisir une catégorie --</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" required></textarea>
+                        </div>
+
+                        <!-- Case à cocher pour ajouter photos après création -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" value="1" id="addPhotos" name="addPhotos">
+                            <label class="form-check-label" for="addPhotos">
+                                Ajouter des photos maintenant
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success" id="submitButton">Enregistrer</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = 'Ajouter Business';
+            document.getElementById('businessForm').action = "{{ path('business_add') }}";
+            document.getElementById('name').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('website').value = '';
+            document.getElementById('owner').value = '';
+            document.getElementById('category').value = '';
+            document.getElementById('description').value = '';
+
+            // décocher la case
+            const checkbox = document.getElementById('addPhotos');
+            if (checkbox) checkbox.checked = false;
+
+            new bootstrap.Modal(document.getElementById('businessModal')).show();
+        }
+
+        function openEditModal(id, name, address, phone, website, ownerId, categoryId, description) {
+            document.getElementById('modalTitle').textContent = 'Modifier Business';
+            document.getElementById('businessForm').action = '/business/edit/' + id;
+            document.getElementById('name').value = name;
+            document.getElementById('address').value = address;
+            document.getElementById('phone').value = phone;
+            document.getElementById('website').value = website;
+            document.getElementById('owner').value = ownerId;
+            document.getElementById('category').value = categoryId;
+            document.getElementById('description').value = description;
+
+            const checkbox = document.getElementById('addPhotos');
+            if (checkbox) checkbox.checked = false;
+
+            new bootstrap.Modal(document.getElementById('businessModal')).show();
+        }
+    </script>
+{% endblock %}

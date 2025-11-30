@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Catégories{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1>Gestion des Catégories</h1>
+
+        <!-- Bouton Ajouter Catégorie -->
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openAddModal()">Ajouter Catégorie</button>
+
+        <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+                <th>Nom</th>
+                <th class="text-center">Nombre de Businesses</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for category in categories %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary">
+                            {{ category.businesses|length }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning"
+                                onclick="openEditModal({{ category.id }}, '{{ category.name|e('js') }}')">
+                            Modifier
+                        </button>
+                        <a href="{{ path('category_delete', {'id': category.id}) }}" class="btn btn-sm btn-danger"
+                           onclick="return confirm('Voulez-vous vraiment supprimer cette catégorie ?');">
+                            Supprimer
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">Aucune catégorie trouvée</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal Ajout / Modification -->
+    <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="categoryForm" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Ajouter Catégorie</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="formAlert"></div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success" id="submitButton">Enregistrer</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function openAddModal() {
+            const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
+            modal.show();
+            document.getElementById('modalTitle').textContent = 'Ajouter Catégorie';
+            document.getElementById('categoryForm').action = "{{ path('category_add') }}";
+            document.getElementById('name').value = '';
+            document.getElementById('formAlert').innerHTML = '';
+        }
+
+        function openEditModal(id, name) {
+            const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
+            modal.show();
+            document.getElementById('modalTitle').textContent = 'Modifier Catégorie';
+            document.getElementById('categoryForm').action = '/category/edit/' + id;
+            document.getElementById('name').value = name;
+            document.getElementById('formAlert').innerHTML = '';
+        }
+    </script>
+{% endblock %}

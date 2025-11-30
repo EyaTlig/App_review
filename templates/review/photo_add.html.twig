@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter des photos à la review{% endblock %}
+
+{% block body %}
+    <h1>Ajouter des photos à la review</h1>
+
+    <form action="{{ path('review_photo_add', {'reviewId': review.id}) }}" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="photos" class="form-label">Sélectionner des photos</label>
+            <input type="file" name="photos[]" id="photos" multiple class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Ajouter</button>
+    </form>
+
+    <h2>Photos existantes</h2>
+    <div class="row">
+        {% for photo in review.photos %}
+            <div class="col-3 mb-3">
+                <img src="{{ asset('uploads/review_photos/' ~ photo.url) }}" class="img-fluid">
+                <a href="{{ path('review_photo_delete', {'id': photo.id}) }}" class="btn btn-sm btn-danger mt-1"
+                   onclick="return confirm('Voulez-vous supprimer cette photo ?')">Supprimer</a>
+            </div>
+        {% else %}
+            <p>Aucune photo disponible pour cette review.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

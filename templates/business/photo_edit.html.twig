@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la photo{% endblock %}
+
+{% block body %}
+    <h1>Modifier la photo</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="business" class="form-label">Business</label>
+            <select class="form-select" id="business" name="business" required>
+                {% for b in businesses %}
+                    <option value="{{ b.id }}" {% if photo.business.id == b.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="photo" class="form-label">Nouvelle photo (laisser vide pour conserver l'actuelle)</label>
+            <input type="file" class="form-control" id="photo" name="photo">
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('business_photo_all') }}" class="btn btn-secondary">Annuler</a>
+    </form>
+{% endblock %}

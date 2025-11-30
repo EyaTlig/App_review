@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Toutes les photos{% endblock %}
+
+{% block body %}
+    <h1>Toutes les photos</h1>
+
+    <!-- Bouton global pour ajouter une nouvelle photo -->
+    <a href="{{ path('business_photo_add_global') }}" class="btn btn-primary mb-3">Ajouter une photo</a>
+
+    <div class="row">
+        {% for photo in photos %}
+            <div class="col-3 mb-3 text-center">
+                <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}" class="img-fluid mb-1">
+                <div>
+                    <strong>Business :</strong> {{ photo.business.name }}
+                </div>
+
+                <!-- Boutons CRUD -->
+                <div class="d-flex justify-content-center gap-1 mt-1">
+                    <a href="{{ path('business_photo_edit', {'id': photo.id}) }}" class="btn btn-sm btn-warning">
+                        Modifier
+                    </a>
+                    <a href="{{ path('business_photo_delete', {'id': photo.id}) }}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Voulez-vous supprimer cette photo ?')">
+                        Supprimer
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <p>Aucune photo disponible.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,51 @@
+# config/packages/security.yaml
+security:
+  # encodeurs de mot de passe / password hashers
+  password_hashers:
+    App\Entity\User:
+      algorithm: auto
+
+  # providers
+  providers:
+    app_user_provider:
+      entity:
+        class: App\Entity\User
+        property: email
+
+  # firewalls
+  firewalls:
+    dev:
+      pattern: ^/(_(profiler|wdt)|css|images|js)/
+      security: false
+
+    main:
+      lazy: true
+      provider: app_user_provider
+      form_login:
+        login_path: app_login
+        check_path: app_login
+        default_target_path: app_login # Ajoutez cette ligne
+
+        enable_csrf: true
+      logout:
+        path: app_logout
+        target: app_login
+
+  # accès aux routes - CORRIGÉ
+  access_control:
+    # login accessible par tous
+    - { path: ^/login$, roles: PUBLIC_ACCESS }
+    - { path: ^/logout$, roles: PUBLIC_ACCESS }
+    - { path: ^/register, roles: PUBLIC_ACCESS }
+
+    # pages admin
+    - { path: ^/business, roles: ROLE_ADMIN }
+    - { path: ^/user, roles: ROLE_ADMIN }
+    - { path: ^/review, roles: ROLE_ADMIN }
+    - { path: ^/category, roles: ROLE_ADMIN }
+    - { path: ^/business/photo, roles: ROLE_ADMIN }
+    - { path: ^/review/photo, roles: ROLE_ADMIN }
+    - { path: ^/admin/dashboard, roles: ROLE_ADMIN }
+
+    # Toutes les autres routes nécessitent une authentification
+    - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

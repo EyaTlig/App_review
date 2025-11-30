@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ajouter des photos{% endblock %}
+
+{% block body %}
+    <h1>Ajouter des photos</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% if business is defined %}
+            <!-- Formulaire pour un business déjà choisi -->
+            <p><strong>Business :</strong> {{ business.name }}</p>
+        {% else %}
+            <!-- Sélectionner un business -->
+            <div class="mb-3">
+                <label for="business">Choisir un Business</label>
+                <select name="business" id="business" class="form-select" required>
+                    <option value="">-- Sélectionner --</option>
+                    {% for b in businesses %}
+                        <option value="{{ b.id }}">{{ b.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label for="photos">Sélectionner les photos</label>
+            <input type="file" name="photos[]" id="photos" class="form-control" multiple required>
+        </div>
+
+        <button type="submit" class="btn btn-success">Ajouter les photos</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Gestion des Reviews</h1>
+
+    <!-- Bouton Ajouter -->
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#reviewModal" onclick="resetForm();">Ajouter une Review</button>
+
+    <!-- Flash Messages -->
+    <div id="flashMessages">
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger">{{ message }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- Tableau des Reviews -->
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Business</th>
+            <th>Contenu</th>
+            <th>Note</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for review in reviews %}
+            <tr>
+                <td>{{ review.id }}</td>
+                <td>{{ review.user.name }}</td>
+                <td>{{ review.business.name }}</td>
+                <td>{{ review.comment }}</td>
+                <td>{{ review.rating }}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal"
+                            onclick="editReview({{ review.id }}, {{ review.user.id }}, {{ review.business.id }}, '{{ review.comment|e('js') }}', {{ review.rating }})">
+                        Modifier
+                    </button>
+                    <a href="{{ path('review_delete', {'id': review.id}) }}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Voulez-vous vraiment supprimer cette review ?')">Supprimer</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Modal Ajouter / Modifier Review -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="reviewForm" method="post" action="{{ path('add_review') }}">
+                    <input type="hidden" id="reviewId" name="id">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reviewModalLabel">Ajouter une Review</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>User</label>
+                            <select name="user" id="reviewUser" class="form-control" required>
+                                <option value="">-- Sélectionnez un utilisateur --</option>
+                                {% for u in users %}
+                                    <option value="{{ u.id }}">{{ u.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Business</label>
+                            <select name="business" id="reviewBusiness" class="form-control" required>
+                                <option value="">-- Sélectionnez un business --</option>
+                                {% for b in businesses %}
+                                    <option value="{{ b.id }}">{{ b.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Contenu</label>
+                            <textarea name="content" id="reviewContent" class="form-control" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label>Note</label>
+                            <input type="number" name="rating" id="reviewRating" class="form-control" min="1" max="5" required>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="addPhotos" name="addPhotos">
+                            <label class="form-check-label" for="addPhotos">Vous voulez ajouter des photos?</label>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        function editReview(id, userId, businessId, content, rating) {
+            document.getElementById('reviewForm').action = "{{ path('review_edit', {'id': 0}) }}".replace('0', id);
+            document.getElementById('reviewModalLabel').innerText = 'Modifier la Review';
+            document.getElementById('modalSubmitBtn').innerText = 'Enregistrer';
+            document.getElementById('reviewId').value = id;
+            document.getElementById('reviewUser').value = userId;
+            document.getElementById('reviewBusiness').value = businessId;
+            document.getElementById('reviewContent').value = content;
+            document.getElementById('reviewRating').value = rating;
+        }
+
+        function resetForm() {
+            document.getElementById('reviewForm').action = "{{ path('add_review') }}";
+            document.getElementById('reviewModalLabel').innerText = 'Ajouter une Review';
+            document.getElementById('modalSubmitBtn').innerText = 'Ajouter';
+            document.getElementById('reviewForm').reset();
+        }
+    </script>
+{% endblock %}
