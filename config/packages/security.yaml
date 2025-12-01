@@ -39,9 +39,7 @@ security:
     - { path: ^/register, roles: PUBLIC_ACCESS }
 
     # pages admin
-    - { path: ^/business, roles: ROLE_ADMIN }
     - { path: ^/user, roles: ROLE_ADMIN }
-    - { path: ^/review, roles: ROLE_ADMIN }
     - { path: ^/category, roles: ROLE_ADMIN }
     - { path: ^/business/photo, roles: ROLE_ADMIN }
     - { path: ^/review/photo, roles: ROLE_ADMIN }

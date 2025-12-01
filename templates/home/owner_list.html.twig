@@ -1,0 +1,218 @@
+{% extends 'base_client.html.twig' %}
+
+{% block title %}Mes Businesses{% endblock %}
+
+{% block body %}
+
+
+
+
+    <div class="container py-4">
+        <h2 class="page-title">Mes Businesses</h2>
+
+        {% if businesses is empty %}
+            <p class="text-muted">Vous n'avez aucun business pour le moment.</p>
+        {% else %}
+            <div class="row g-4">
+                {% for business in businesses %}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="business-card">
+
+                            {% if business.photos|length > 0 %}
+                                <div id="carouselBusiness{{ business.id }}" class="carousel slide">
+                                    <div class="carousel-inner">
+                                        {% for photo in business.photos %}
+                                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                                <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
+                                                     class="d-block w-100 carousel-img">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    {% if business.photos|length > 1 %}
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon"></span>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <img src="{{ asset('images/default-business.png') }}" class="card-img-top">
+                            {% endif %}
+
+                            <div class="card-body px-3">
+                                <h5 class="card-title">{{ business.name }}</h5>
+
+                                <p class="card-text">
+                                    {{ business.description|default('Pas de description') }}
+                                </p>
+
+                                <div class="d-flex justify-content-between mt-3">
+                                    <button class="btn btn-warning btn-modern"
+                                            onclick="openEditModal(
+                                            {{ business.id }},
+                                                    '{{ business.name|e('js') }}',
+                                                    '{{ business.address|e('js') }}',
+                                                    '{{ business.phone|e('js') }}',
+                                                    '{{ business.website|e('js') }}',
+                                            {{ business.owner ? business.owner.id : 'null' }},
+                                            {{ business.category ? business.category.id : 'null' }},
+                                                    '{{ business.description|e('js') }}'
+                                                    )">
+                                        Modifier
+                                    </button>
+
+                                    <form action="{{ path('business_delete', {'id': business.id}) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('Confirmer la suppression ?');">
+                                        <button type="submit" class="btn btn-danger btn-modern">Supprimer</button>
+                                    </form>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+
+
+    <!-- ---------- MODAL AJOUT / MODIF ---------- -->
+    <div class="modal fade" id="businessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <form id="businessForm" method="POST" enctype="multipart/form-data">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Ajouter Business</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Nom</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Adresse</label>
+                            <input type="text" id="address" name="address" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" id="phone" name="phone" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Site Web</label>
+                            <input type="text" id="website" name="website" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Catégorie</label>
+                            <select id="category" name="category" class="form-select" required>
+                                <option value="">-- Choisir une catégorie --</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea id="description" name="description" class="form-control" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Photos (max 5)</label>
+                            <input type="file" id="photosInput" name="photos[]" class="form-control" multiple accept="image/*">
+                            <div id="filePreviews" class="mt-2 d-flex gap-2 flex-wrap"></div>
+                            <div id="photoCount" class="fw-semibold mt-1"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-success btn-modern" id="submitButton">Enregistrer</button>
+                        <button class="btn btn-secondary btn-modern" data-bs-dismiss="modal">Annuler</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+
+
+{% block javascripts %}
+    <script>
+        /* ------------------------- MODIFIER BUSINESS ------------------------- */
+        function openEditModal(id, name, address, phone, website, ownerId, categoryId, description) {
+            document.getElementById('modalTitle').textContent = 'Modifier Business';
+            document.getElementById('businessForm').action = '/business/owner/edit/' + id;
+
+            document.getElementById('name').value = name;
+            document.getElementById('address').value = address;
+            document.getElementById('phone').value = phone;
+            document.getElementById('website').value = website;
+            document.getElementById('category').value = categoryId;
+            document.getElementById('description').value = description;
+
+            new bootstrap.Modal(document.getElementById('businessModal')).show();
+        }
+
+        /* ------------------------ PREVIEW PHOTOS ------------------------ */
+        function handlePhotoUpload(input) {
+            const container = document.getElementById('filePreviews');
+            const counter = document.getElementById('photoCount');
+
+            container.innerHTML = '';
+            counter.textContent = '';
+
+            const files = Array.from(input.files).slice(0, 5);
+
+            files.forEach((file) => {
+                if (!file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'photo-preview';
+                    div.innerHTML = `
+                <img src="${e.target.result}">
+                <button type="button" class="remove-photo" onclick="removePhoto(this)">&times;</button>
+            `;
+                    container.appendChild(div);
+                };
+
+                reader.readAsDataURL(file);
+            });
+
+            counter.textContent = `${files.length} image(s) sélectionnée(s)`;
+        }
+
+        document.getElementById('photosInput')?.addEventListener('change', function () {
+            handlePhotoUpload(this);
+        });
+
+        /* ------------------------ REMOVE PHOTO ------------------------ */
+        function removePhoto(btn) {
+            btn.closest('.photo-preview').remove();
+            const remaining = document.querySelectorAll('#filePreviews .photo-preview').length;
+            document.getElementById('photoCount').textContent =
+                remaining ? `${remaining} image(s) sélectionnée(s)` : '';
+        }
+    </script>
+{% endblock %}

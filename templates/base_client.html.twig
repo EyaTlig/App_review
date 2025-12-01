@@ -38,6 +38,76 @@
             box-shadow: none;
             outline: none;
         }
+        /* Carousel images */
+        .carousel-img {
+            height: 220px;
+            object-fit: cover;
+        }
+
+        /* Owner link */
+        .owner-line a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .owner-line a:hover {
+            text-decoration: underline;
+        }
+
+        /* Add button */
+        .btn-add-business {
+            border-radius: 50px;
+            padding: 8px 18px;
+        }
+
+        /* Modal preview */
+        .photo-preview {
+            position: relative;
+        }
+        .photo-preview img {
+            width: 70px;
+            height: 70px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .remove-photo {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        /* --- CATEGORIES SCROLL --- */
+        .category-scroll {
+            display: flex;
+            gap: 10px;
+            padding-bottom: 10px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        .category-scroll a {
+            white-space: nowrap;
+            border-radius: 50px;
+            padding: 8px 18px;
+        }
+
+        /* --- BUSINESS CARD --- */
+        .business-card {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            transition: 0.3s ease;
+            background: #fff;
+        }
+        .business-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
     </style>
 </head>
 <body>

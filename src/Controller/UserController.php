@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Controller;
 
 use App\Entity\User;
@@ -7,101 +6,126 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 #[IsGranted('ROLE_ADMIN')]
 #[Route('/user')]
 class UserController extends AbstractController
 {
     #[Route('/', name: 'user_index')]
-    public function index(EntityManagerInterface $em): Response
-    {
+    public function index(EntityManagerInterface $em) {
         $users = $em->getRepository(User::class)->findAll();
-
-        return $this->render('user/manage.html.twig', [
-            'users' => $users
-        ]);
+        return $this->render('user/manage.html.twig', ['users' => $users]);
     }
 
     #[Route('/add', name: 'user_add', methods: ['POST'])]
-    public function add(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
-    {
-        $name = trim($request->request->get('name', ''));
-        $email = trim($request->request->get('email', ''));
-        $password = $request->request->get('password', '');
-        $role = $request->request->get('role', 'CUSTOMER');
+    public function add(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher) {
 
-        // Validation
-        if (!$name || !$email || !$password) {
-            $this->addFlash('error', 'Tous les champs obligatoires doivent être remplis.');
-            return $this->redirectToRoute('user_index');
-        }
+            $name = $request->request->get('name');
+            $email = $request->request->get('email');
+            $password = $request->request->get('password');
+            $role = $request->request->get('role');
+            $cin = $request->request->get('cin');
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->addFlash('error', 'L\'adresse email est invalide.');
-            return $this->redirectToRoute('user_index');
-        }
+            if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
+                $this->addFlash('error', 'Email déjà utilisé.');
+                return $this->redirectToRoute('app_register');
+            }
 
-        // Vérifier email dupliqué
-        if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
-            $this->addFlash('error', 'Cet email est déjà utilisé.');
-            return $this->redirectToRoute('user_index');
-        }
+            $user = new User();
+            $user->setName($name)->setEmail($email)->setRole($role)->setCreatedAt(new \DateTime());
 
-        $user = new User();
-        $user->setName($name)
-            ->setEmail($email)
-            ->setRole($role)
-            ->setCreatedAt(new \DateTime());
+            if ($role === 'SERVICE_OWNER') {
+                $user->setCin($cin);
+                $user->setIsValidated(false);
+            } else {
+                $user->setIsValidated(true);
+            }
 
-        // Utilisation du password hasher de Symfony
-        $hashedPassword = $passwordHasher->hashPassword($user, $password);
-        $user->setPassword($hashedPassword);
+            $photoFile = $request->files->get('photo');
+            if ($photoFile) {
+                $newFilename = uniqid() . '.' . $photoFile->guessExtension();
+                $photoFile->move($this->getParameter('kernel.project_dir') . '/public/uploads', $newFilename);
+                $user->setPhoto($newFilename);
+            }
 
-        $em->persist($user);
-        $em->flush();
-
-        $this->addFlash('success', 'Utilisateur "' . $name . '" ajouté avec succès !');
-        return $this->redirectToRoute('user_index');
-    }
-
-    #[Route('/edit/{id}', name: 'user_edit', methods: ['POST'])]
-    public function edit(User $user, Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
-    {
-        $name = $request->request->get('name');
-        $email = $request->request->get('email');
-        $password = $request->request->get('password');
-        $role = $request->request->get('role');
-
-        // Vérifier email dupliqué
-        $existingUser = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-        if ($existingUser && $existingUser->getId() !== $user->getId()) {
-            $this->addFlash('error', 'Cet email est déjà utilisé.');
-            return $this->redirectToRoute('user_index');
-        }
-
-        $user->setName($name);
-        $user->setEmail($email);
-        $user->setRole($role);
-        if ($password) {
             $hashedPassword = $passwordHasher->hashPassword($user, $password);
             $user->setPassword($hashedPassword);
+
+            $em->persist($user);
+            $em->flush();
+
+
+        $this->addFlash('success', 'Utilisateur ajouté.');
+        return $this->redirectToRoute('user_index');
+    }
+
+    #[Route('/edit/{id}', name: 'user_edit', methods:['POST'])]
+    public function edit(User $user, Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher) {
+        $user->setName($request->request->get('name'));
+        $user->setEmail($request->request->get('email'));
+        $user->setRole($request->request->get('role'));
+        $password = $request->request->get('password');
+        if ($password) $user->setPassword($passwordHasher->hashPassword($user,$password));
+        $em->flush();
+        $this->addFlash('success','Utilisateur modifié');
+        return $this->redirectToRoute('user_index');
+    }
+
+    #[Route('/delete/{id}', name:'user_delete')]
+    public function delete(User $user, EntityManagerInterface $em) {
+        $em->remove($user); $em->flush();
+        $this->addFlash('success','Utilisateur supprimé');
+        return $this->redirectToRoute('user_index');
+    }
+
+
+
+    #[Route('/validate/{id}', name: 'user_validate')]
+    public function validate(User $user, EntityManagerInterface $em, MailerInterface $mailer): Response
+    {
+        if ($user->getRole() !== 'SERVICE_OWNER') {
+            $this->addFlash('error', 'Seuls les Service Owners doivent être validés.');
+            return $this->redirectToRoute('user_index');
         }
 
+        $user->setIsValidated(true);
         $em->flush();
 
-        $this->addFlash('success', 'Utilisateur modifié avec succès !');
+        try {
+            // Envoi de l'email via Ethereal
+            $email = (new Email())
+                ->from('admin@app-review.com')
+                ->to($user->getEmail()) // Envoie à l'email de l'utilisateur
+                ->subject('Validation de votre compte Service Owner')
+                ->html('<p>Bonjour '.$user->getName().',</p>
+                <p>Votre compte Service Owner a été validé par l\'administrateur. Vous pouvez maintenant vous connecter.</p>');
+
+            $mailer->send($email);
+
+            $this->addFlash('success', 'Le compte a été validé et l\'utilisateur a été notifié par email.');
+
+        } catch (TransportExceptionInterface $e) {
+            // Même en cas d'erreur d'envoi d'email, la validation est enregistrée
+            $this->addFlash('warning', 'Le compte a été validé mais l\'email n\'a pas pu être envoyé: '.$e->getMessage());
+        }
+
         return $this->redirectToRoute('user_index');
     }
 
-    #[Route('/delete/{id}', name: 'user_delete')]
-    public function delete(User $user, EntityManagerInterface $em): Response
-    {
-        $em->remove($user);
+
+    #[Route('/toggle/{id}', name:'user_toggle')]
+    public function toggle(User $user, EntityManagerInterface $em) {
+        $user->setIsActive(!$user->isActive());
         $em->flush();
-        $this->addFlash('success', 'Utilisateur supprimé avec succès !');
+        $this->addFlash('success', $user->isActive() ? 'Activé' : 'Désactivé');
         return $this->redirectToRoute('user_index');
     }
+
+
 }

@@ -13,9 +13,12 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/business')]
+
 class BusinessController extends AbstractController
 {
     #[Route('/', name: 'business_index')]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function index(EntityManagerInterface $em): Response
     {
         $businesses = $em->getRepository(Business::class)->findAll();
@@ -30,6 +33,8 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/add', name: 'business_add', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function add(Request $request, EntityManagerInterface $em): Response
     {
         // Récupération et validation des données
@@ -94,6 +99,8 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/edit/{id}', name: 'business_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function edit(Business $business, Request $request, EntityManagerInterface $em): Response
     {
         // Utilisation du param converter pour récupérer le business
@@ -163,6 +170,8 @@ class BusinessController extends AbstractController
     }
 
     #[Route('/delete/{id}', name: 'business_delete')]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function delete(Business $business, EntityManagerInterface $em): Response
     {
         // Utilisation du param converter
@@ -186,7 +195,10 @@ class BusinessController extends AbstractController
         return $this->redirectToRoute('business_index');
     }
     #[Route('/{id}', name: 'business_show', methods: ['GET'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')] // accessible par tous les utilisateurs connectés
+
     public function show(Business $business): Response
+
     {
         return $this->render('business/modal_show.html.twig', [
             'business' => $business,

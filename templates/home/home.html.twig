@@ -1,15 +1,64 @@
 {% extends 'base_client.html.twig' %}
-
 {% block title %}Accueil{% endblock %}
 
 {% block body %}
 
-    <div class="container mt-4">
-        <h2 class="mb-4">Explorez toutes les catégories</h2>
+    <style>
+        .hero-section {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)),
+            url('{{ asset("images/review.jpg") }}') center/cover no-repeat;
+            padding: 90px 20px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            color: #fff;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-weight: 700;
+            font-size: 2.8rem;
+        }
 
-        {# Scroll horizontal pour les catégories #}
-        <div class="mb-4 overflow-auto d-flex gap-2">
-            <a href="{{ path('client_home') }}" class="btn btn-outline-secondary {% if not app.request.query.get('category') %}active{% endif %}">Tous</a>
+
+
+    </style>
+
+    <div class="container mt-4">
+
+        {# ===== HEADER ===== #}
+        <div class="hero-section">
+            <h1>Explorez les meilleurs services autour de vous</h1>
+            <p class="mt-2">Découvrez des entreprises proches, fiables et vérifiées.</p>
+        </div>
+
+        {# ===== HEADER ACTIONS ===== #}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">Catégories</h2>
+
+            <div>
+                {% if app.user %}
+                    <a href="{{ path('user_profile') }}" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-person-circle me-1"></i> Mon profil
+                    </a>
+
+                    {% if app.user.role == 'SERVICE_OWNER' %}
+                        <button class="btn btn-primary btn-add-business me-2" onclick="openAddModal()">
+                            <i class="bi bi-plus-circle me-1"></i> Ajouter mon Business
+                        </button>
+                        <a href="{{ path('owner_businesses') }}" class="btn btn-outline-secondary">
+                            Mes Businesses
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        {# ===== CATEGORIES ===== #}
+        <div class="category-scroll mb-4">
+            <a href="{{ path('client_home') }}"
+               class="btn btn-outline-secondary {% if not app.request.query.get('category') %}active{% endif %}">
+                Tous
+            </a>
+
             {% for category in categories %}
                 <a href="{{ path('client_home') }}?category={{ category.id }}"
                    class="btn btn-outline-primary {% if app.request.query.get('category') == category.id %}active{% endif %}">
@@ -18,201 +67,193 @@
             {% endfor %}
         </div>
 
-        <h2 class="mb-4">Découvrez notre univers</h2>
-        <div class="row g-4">
+        {# ===== BUSINESS GRID ===== #}
+        <h2 class="fw-bold mb-3">Découvrez notre univers</h2>
 
+        <div class="row g-4">
             {% for business in businesses %}
                 <div class="col-12 col-md-6 col-lg-4">
 
-                    {# ----→ CARD CLIQUABLE ←---- #}
-                    <div class="card mb-3 shadow-sm h-100 business-card"
+                    <div class="card business-card"
                          data-id="{{ business.id }}"
                          style="cursor:pointer;">
 
+                        {# Photos #}
                         {% if business.photos|length > 0 %}
-                            <div id="carouselBusiness{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
-
-                                {% if business.photos|length > 1 %}
-                                    <div class="carousel-indicators">
-                                        {% for photo in business.photos %}
-                                            <button type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide-to="{{ loop.index0 }}"
-                                                    class="{% if loop.first %}active{% endif %}"></button>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                            <div id="carousel{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
 
                                 <div class="carousel-inner">
                                     {% for photo in business.photos %}
                                         <div class="carousel-item {% if loop.first %}active{% endif %}">
-                                            <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
-                                                 class="d-block w-100 carousel-img">
+                                            <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}" class="carousel-img w-100">
                                         </div>
                                     {% endfor %}
                                 </div>
 
                                 {% if business.photos|length > 1 %}
-                                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="prev">
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ business.id }}" data-bs-slide="prev">
                                         <span class="carousel-control-prev-icon"></span>
                                     </button>
-                                    <button class="carousel-control-next" type="button" data-bs-target="#carouselBusiness{{ business.id }}" data-bs-slide="next">
+                                    <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ business.id }}" data-bs-slide="next">
                                         <span class="carousel-control-next-icon"></span>
                                     </button>
                                 {% endif %}
                             </div>
                         {% else %}
-                            <img src="{{ asset('images/default-business.png') }}" class="card-img-top">
+                            <img src="{{ asset('images/default-business.png') }}" class="carousel-img w-100">
                         {% endif %}
 
                         <div class="card-body">
-                            <h5 class="card-title">{{ business.name }}</h5>
-                            <p class="card-text flex-grow-1">{{ business.description|default('Pas de description') }}</p>
+                            <h5 class="fw-bold">{{ business.name }}</h5>
+                            <p class="text-muted">{{ business.description|default('Pas de description') }}</p>
 
-                            <p class="text-muted mb-0">
-                                Propriétaire :
+                            <p class="owner-line">
+                                <small class="text-secondary">Propriétaire :</small>
                                 <a href="{{ path('owner_profile', { 'id': business.owner.id }) }}">
                                     {{ business.owner.name }}
                                 </a>
                             </p>
-                        </div>
+                            <i class="bi bi-heart fav-icon"></i>
 
+                        </div>
                     </div>
 
                 </div>
             {% endfor %}
-
         </div>
     </div>
 
-    {# ----------- MODAL VIDE (rempli par AJAX) ----------- #}
+
+    {# ========== MODAL DETAILS ========== #}
     <div class="modal fade" id="businessModal" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content" id="modal-content-area">
-                <!-- le contenu AJAX arrive ici -->
+            <div class="modal-content" id="modal-content-area"></div>
+        </div>
+    </div>
+
+    {# ========== MODAL AJOUT ========== #}
+    <div class="modal fade" id="businessModalajout" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <form id="businessForm" method="POST"
+                      action="{{ path('business_add_owner') }}"
+                      enctype="multipart/form-data">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ajouter Business</h5>
+                        <button class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Nom</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Adresse</label>
+                            <input type="text" class="form-control" name="address" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" class="form-control" name="phone" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Site Web</label>
+                            <input type="text" class="form-control" name="website">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Catégorie</label>
+                            <select name="category" class="form-select" required>
+                                <option value="">-- Choisir une catégorie --</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Photos (max 5)</label>
+                            <input type="file" id="photosInput" name="photos[]" class="form-control" multiple accept="image/*">
+                            <div id="filePreviews" class="mt-2 d-flex gap-2 flex-wrap"></div>
+                            <div id="photoCount" class="text-primary fw-medium mt-1"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-success">Enregistrer</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
     </div>
 
-
-    <style>
-        .carousel-img {
-            height: 300px;
-            object-fit: cover;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            transition: all 0.3s ease;
-        }
-
-        .overflow-auto {
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-        }
-    </style>
-
     <script>
+        /* ***** JS inchangé + clean ***** */
+
         document.querySelectorAll(".business-card").forEach(card => {
             card.addEventListener("click", function () {
-                const id = this.dataset.id;
-
-                fetch("/business/" + id)
-                    .then(response => response.text())
+                fetch("/business/" + this.dataset.id)
+                    .then(r => r.text())
                     .then(html => {
                         document.getElementById("modal-content-area").innerHTML = html;
-
-                        let modal = new bootstrap.Modal(document.getElementById("businessModal"));
-                        modal.show();
+                        new bootstrap.Modal(document.getElementById("businessModal")).show();
                     });
             });
         });
-        // Fonction pour gérer les uploads de photos avec previews
-        function handlePhotoUpload(input, businessId) {
-            const filePreviewsContainer = document.getElementById(`filePreviews${businessId}`);
-            const photoCountElement = document.getElementById(`photoCount${businessId}`);
-            const form = input.closest('form');
 
-            if (!filePreviewsContainer) return;
+        function openAddModal() {
+            document.getElementById('businessForm').reset();
+            document.getElementById('filePreviews').innerHTML = '';
+            document.getElementById('photoCount').textContent = '';
+            new bootstrap.Modal(document.getElementById('businessModalajout')).show();
+        }
 
-            // Reset
-            filePreviewsContainer.innerHTML = '';
-            filePreviewsContainer.classList.add('d-none');
-            photoCountElement.textContent = '';
+        function handlePhotoUpload(input) {
+            const previews = document.getElementById('filePreviews');
+            const count = document.getElementById('photoCount');
 
-            const files = Array.from(input.files);
-            if (files.length === 0) return;
+            previews.innerHTML = '';
+            count.textContent = '';
 
-            // Limite à 5 images
-            const limitedFiles = files.slice(0, 5);
-            if (files.length > 5) {
-                alert('Limite de 5 images atteinte. Les premières 5 seront utilisées.');
-            }
+            const files = Array.from(input.files).slice(0, 5);
 
-            limitedFiles.forEach((file, index) => {
-                if (!file.type.startsWith('image/')) return; // Ignorer non-images
-
+            files.forEach(file => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'photo-preview';
-                    previewDiv.innerHTML = `
-                <img src="${e.target.result}" alt="${file.name}">
-                <button type="button" class="remove-photo" onclick="removePhoto(this, ${index}, '${businessId}')">&times;</button>
+                reader.onload = e => {
+                    const preview = document.createElement('div');
+                    preview.className = "photo-preview";
+                    preview.innerHTML = `
+                <img src="${e.target.result}">
+                <button type="button" class="remove-photo" onclick="this.parentElement.remove()">×</button>
             `;
-                    filePreviewsContainer.appendChild(previewDiv);
-
-                    // Ajouter l'input hidden pour garder le fichier (pour submit)
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'file';
-                    hiddenInput.name = 'photos[]';
-                    hiddenInput.style.display = 'none';
-                    hiddenInput.files = [file]; // Pas standard, mais fonctionne pour FormData
-                    form.appendChild(hiddenInput);
-                };
+                    previews.appendChild(preview);
+                }
                 reader.readAsDataURL(file);
             });
 
-            // Afficher container et compteur
-            filePreviewsContainer.classList.remove('d-none');
-            photoCountElement.innerHTML = `<i class="bi bi-images me-1"></i>${limitedFiles.length} image(s) sélectionnée(s)`;
-            photoCountElement.className = 'text-primary fw-medium';
+            count.innerHTML = `<i class="bi bi-images"></i> ${files.length} image(s)`;
         }
 
-        // Fonction pour supprimer une preview
-        window.removePhoto = function(button, index, businessId) {
-            const container = document.getElementById(`filePreviews${businessId}`);
-            const previews = container.querySelectorAll('.photo-preview');
-            if (previews[index]) {
-                previews[index].remove();
-            }
-            // Mise à jour compteur
-            const remaining = container.querySelectorAll('.photo-preview').length;
-            const photoCountElement = document.getElementById(`photoCount${businessId}`);
-            if (remaining === 0) {
-                container.classList.add('d-none');
-                photoCountElement.textContent = '';
-            } else {
-                photoCountElement.innerHTML = `<i class="bi bi-images me-1"></i>${remaining} image(s) sélectionnée(s)`;
-            }
-            // Optionnel : Retirer le fichier du form (re-scan si besoin)
-        }
-
-        // Attachement des listeners sur modals shown
-        document.addEventListener('DOMContentLoaded', function() {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                modal.addEventListener('shown.bs.modal', function() {
-                    const fileInputs = modal.querySelectorAll('input[type="file"][id^="photosInput"]');
-                    fileInputs.forEach(input => {
-                        const businessId = input.id.replace('photosInput', '');
-                        input.addEventListener('change', function() {
-                            handlePhotoUpload(this, businessId);
-                        });
-                    });
-                });
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('photosInput')?.addEventListener('change', function () {
+                handlePhotoUpload(this);
             });
         });
-
     </script>
-
 
 {% endblock %}

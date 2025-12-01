@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Review;
 use App\Entity\User;
-use App\Entity\ReviewPhoto; // ← ajouter ceci
+use App\Entity\ReviewPhoto;
 
 use App\Entity\Business;
 use Doctrine\ORM\EntityManagerInterface;
@@ -12,12 +12,16 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 
 #[Route('/review')]
+
 class ReviewController extends AbstractController
 {
     #[Route('/', name: 'review_index')]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function index(EntityManagerInterface $em): Response
     {
         $reviews = $em->getRepository(Review::class)->findAll();
@@ -32,6 +36,8 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/add', name: 'add_review', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function add(Request $request, EntityManagerInterface $em): Response
     {
         $user = $em->getRepository(User::class)->find($request->request->get('user'));
@@ -59,6 +65,8 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/edit/{id}', name: 'review_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function edit(Review $review, Request $request, EntityManagerInterface $em): Response
     {
         $user = $em->getRepository(User::class)->find($request->request->get('user'));
@@ -84,6 +92,8 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/delete/{id}', name: 'review_delete')]
+    #[IsGranted('ROLE_ADMIN')]
+
     public function delete(Review $review, EntityManagerInterface $em): Response
     {
         $em->remove($review);
@@ -94,24 +104,25 @@ class ReviewController extends AbstractController
     }
 
     #[Route('/business/{id}/review/add', name: 'review_add', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+
     public function addReview(Request $request, Business $business, EntityManagerInterface $em): Response
     {
         $review = new Review();
         $review->setBusiness($business);
-        $review->setUser($this->getUser()); // si login obligatoire
+        $review->setUser($this->getUser());
         $review->setRating($request->request->get('rating'));
         $review->setComment($request->request->get('comment'));
 
         $em->persist($review);
 
-        // Gestion des photos
         $uploadedFiles = $request->files->get('photos');
         if ($uploadedFiles) {
             foreach ($uploadedFiles as $file) {
                 if ($file) {
                     $filename = uniqid() . '.' . $file->guessExtension();
                     $file->move(
-                        $this->getParameter('review_photos_directory'), // définir dans services.yaml
+                        $this->getParameter('review_photos_directory'),
                         $filename
                     );
 

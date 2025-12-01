@@ -1,10 +1,14 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Gestion des Utilisateurs{% endblock %}
+
 {% block body %}
-    <h1>Gestion des Utilisateurs</h1>
+<div class="container mt-5">
+    <h2>Gestion des Utilisateurs</h2>
 
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetForm();">Ajouter un utilisateur</button>
+    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetForm()">Ajouter un utilisateur</button>
 
+    <!-- Flash messages -->
     <div id="flashMessages">
         {% for message in app.flashes('success') %}
             <div class="alert alert-success">{{ message }}</div>
@@ -17,7 +21,15 @@
     <table class="table table-striped">
         <thead>
         <tr>
-            <th>ID</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Actions</th>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th>Photo</th>
+            <th>CIN</th>
+            <th>Validé</th>
+            <th>Actif</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <tbody>
@@ -26,11 +38,33 @@
                 <td>{{ user.id }}</td>
                 <td>{{ user.name }}</td>
                 <td>{{ user.email }}</td>
-                <td>{{ user.role }}</td>
+                <td>{{ user.readableRole }}</td>
+                <td>
+                    {% if user.photo %}
+                        <img src="{{ asset('uploads/' ~ user.photo) }}" width="50" class="rounded">
+                    {% endif %}
+                </td>
+                <td>{{ user.cin }}</td>
+                <td>
+                    {% if user.role == 'SERVICE_OWNER' %}
+                        {% if user.isValidated %}
+                            <span class="badge bg-success">Validé</span>
+                        {% else %}
+                            <a href="{{ path('user_validate', {id: user.id}) }}" class="btn btn-info btn-sm">Valider</a>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.isActive %}
+                        <a href="{{ path('user_toggle', {id: user.id}) }}" class="btn btn-warning btn-sm">Désactiver</a>
+                    {% else %}
+                        <a href="{{ path('user_toggle', {id: user.id}) }}" class="btn btn-secondary btn-sm">Activer</a>
+                    {% endif %}
+                </td>
                 <td>
                     <button class="btn btn-warning btn-sm"
                             data-bs-toggle="modal" data-bs-target="#userModal"
-                            onclick="editUser({{ user.id }}, '{{ user.name }}', '{{ user.email }}', '{{ user.role }}')">Modifier</button>
+                            onclick="editUser({{ user.id }}, '{{ user.name }}', '{{ user.email }}', '{{ user.role }}', '{{ user.cin }}')">Modifier</button>
                     <a href="{{ path('user_delete', {'id': user.id}) }}" class="btn btn-danger btn-sm"
                        onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?')">Supprimer</a>
                 </td>
@@ -38,67 +72,85 @@
         {% endfor %}
         </tbody>
     </table>
+</div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="userForm" method="post" action="{{ path('user_add') }}">
-                    <input type="hidden" id="userId" name="id">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="userModalLabel">Ajouter un utilisateur</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Modal Add/Edit -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="userForm" method="post" action="{{ path('user_add') }}" enctype="multipart/form-data">
+                <input type="hidden" id="userId" name="id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalLabel">Ajouter un utilisateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Nom</label>
+                        <input type="text" name="name" id="userName" class="form-control" required>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label>Nom</label>
-                            <input type="text" name="name" id="userName" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email" name="email" id="userEmail" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Mot de passe</label>
-                            <input type="password" name="password" id="userPassword" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label>Rôle</label>
-                            <select name="role" id="userRole" class="form-control">
-                                <option value="ADMIN">Admin</option>
-                                <option value="CUSTOMER">Customer</option>
-                                <option value="SERVICE_OWNER">Service Owner</option>
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" id="userEmail" class="form-control" required>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
+                    <div class="mb-3">
+                        <label>Mot de passe</label>
+                        <input type="password" name="password" id="userPassword" class="form-control">
                     </div>
-                </form>
-            </div>
+                    <div class="mb-3">
+                        <label>Rôle</label>
+                        <select name="role" id="userRole" class="form-control">
+                            <option value="CUSTOMER">Customer</option>
+                            <option value="SERVICE_OWNER">Service Owner</option>
+                        </select>
+                    </div>
+                    <div id="cinField" class="mb-3" style="display:none;">
+                        <label>N° CIN</label>
+                        <input type="text" name="cin" id="userCin" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Photo</label>
+                        <input type="file" name="photo" id="userPhoto" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
+                </div>
+            </form>
         </div>
     </div>
-
+</div>
 {% endblock %}
 
 {% block javascripts %}
     <script>
-        function editUser(id, name, email, role) {
+        const roleSelect = document.getElementById('userRole');
+        const cinField = document.getElementById('cinField');
+
+        roleSelect.addEventListener('change', function() {
+            cinField.style.display = (this.value === 'SERVICE_OWNER') ? 'block' : 'none';
+        });
+
+        function editUser(id, name, email, role, cin) {
             document.getElementById('userForm').action = "{{ path('user_edit', {'id': 0}) }}".replace('0', id);
-            document.getElementById('userModalLabel').innerText = 'Modifier l\'utilisateur';
-            document.getElementById('modalSubmitBtn').innerText = 'Enregistrer';
+            document.getElementById('userModalLabel').innerText = "Modifier l'utilisateur";
+            document.getElementById('modalSubmitBtn').innerText = "Enregistrer";
+
             document.getElementById('userName').value = name;
             document.getElementById('userEmail').value = email;
             document.getElementById('userRole').value = role;
+            document.getElementById('userCin').value = cin || '';
+            cinField.style.display = (role === 'SERVICE_OWNER') ? 'block' : 'none';
             document.getElementById('userPassword').value = '';
         }
 
         function resetForm() {
             document.getElementById('userForm').action = "{{ path('user_add') }}";
-            document.getElementById('userModalLabel').innerText = 'Ajouter un utilisateur';
-            document.getElementById('modalSubmitBtn').innerText = 'Ajouter';
+            document.getElementById('userModalLabel').innerText = "Ajouter un utilisateur";
+            document.getElementById('modalSubmitBtn').innerText = "Ajouter";
             document.getElementById('userForm').reset();
+            cinField.style.display = 'none';
         }
     </script>
 {% endblock %}

@@ -1,5 +1,4 @@
 <?php
-// src/Controller/SecurityController.php
 namespace App\Controller;
 
 use App\Entity\User;
@@ -11,20 +10,30 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-
 class SecurityController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
-    {           if ($this->getUser()) {
-        $roles = $this->getUser()->getRoles();
-        if (in_array('ROLE_ADMIN', $roles)) {
-            return $this->redirectToRoute('admin_dashboard');
-        }else{
-            return $this->redirectToRoute('client_home'); // page d'accueil client
-        }
-    }
+    {
+        if ($this->getUser()) {
+            $user = $this->getUser();
 
+            if ($user->getRole() === 'SERVICE_OWNER' && !$user->isValidated()) {
+                $this->addFlash('error', 'Votre compte Owner est en attente de validation par l’administrateur.');
+                return $this->redirectToRoute('app_logout');
+            }
+
+            if (!$user->isActive()) {
+                $this->addFlash('error', 'Votre compte est désactivé.');
+                return $this->redirectToRoute('app_logout');
+            }
+
+            if (in_array('ROLE_ADMIN', $user->getRoles())) {
+                return $this->redirectToRoute('admin_dashboard');
+            } else {
+                return $this->redirectToRoute('client_home');
+            }
+        }
 
         $error = $authenticationUtils->getLastAuthenticationError();
         $lastUsername = $authenticationUtils->getLastUsername();
@@ -36,42 +45,52 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/logout', name: 'app_logout')]
-    public function logout(): void
-    {
-        throw new \Exception('This should never be reached!');
-    }
+    public function logout(): void { throw new \Exception('This should never be reached!'); }
 
     #[Route('/register', name: 'app_register')]
     public function register(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
     {
         if ($request->isMethod('POST')) {
+
             $name = $request->request->get('name');
             $email = $request->request->get('email');
             $password = $request->request->get('password');
-            $role = $request->request->get('role', 'CUSTOMER'); // default
+            $role = $request->request->get('role');
+            $cin = $request->request->get('cin');
 
-            // Vérifier si l'email existe déjà
-            $existingUser = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-            if ($existingUser) {
-                $this->addFlash('error', 'Cet email est déjà utilisé.');
+            if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
+                $this->addFlash('error', 'Email déjà utilisé.');
                 return $this->redirectToRoute('app_register');
             }
 
             $user = new User();
-            $user->setName($name)
-                ->setEmail($email)
-                ->setRole($role)
-                ->setCreatedAt(new \DateTime());
+            $user->setName($name)->setEmail($email)->setRole($role)->setCreatedAt(new \DateTime());
 
-            // Hash du mot de passe
+            if ($role === 'SERVICE_OWNER') {
+                $user->setCin($cin);
+                $user->setIsValidated(false);
+            } else {
+                $user->setIsValidated(true);
+            }
+
+            $photoFile = $request->files->get('photo');
+            if ($photoFile) {
+                $newFilename = uniqid().'.'.$photoFile->guessExtension();
+                $photoFile->move($this->getParameter('kernel.project_dir').'/public/uploads', $newFilename);
+                $user->setPhoto($newFilename);
+            }
+
             $hashedPassword = $passwordHasher->hashPassword($user, $password);
             $user->setPassword($hashedPassword);
 
             $em->persist($user);
             $em->flush();
 
-            $this->addFlash('success', 'Inscription réussie. Vous pouvez vous connecter.');
-            return $this->redirectToRoute('app_login');
+            if ($role === 'SERVICE_OWNER') {
+                $this->addFlash('success', 'Inscription réussie. Vous recevrez un email après la confirmation de votre compte par l’admin.');
+            } else {
+                $this->addFlash('success', 'Inscription réussie. Vous pouvez vous connecter.');
+            }            return $this->redirectToRoute('app_login');
         }
 
         return $this->render('security/register.html.twig');

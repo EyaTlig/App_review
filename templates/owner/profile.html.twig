@@ -8,19 +8,18 @@
         <h2 class="mb-4">Propriétaire : {{ owner.name }}</h2>
 
         <h4 class="mb-3">Ses commerces</h4>
+
         <div class="row g-4">
 
             {% for business in businesses %}
                 <div class="col-md-4">
 
-                    {# ----→ CARD CLIQUABLE ←---- #}
                     <div class="card mb-3 shadow-sm h-100 business-card"
                          data-id="{{ business.id }}"
                          style="cursor:pointer;">
 
                         {% if business.photos|length > 0 %}
                             <div id="carouselOwner{{ business.id }}" class="carousel slide" data-bs-ride="carousel">
-
                                 <div class="carousel-inner">
                                     {% for photo in business.photos %}
                                         <div class="carousel-item {% if loop.first %}active{% endif %}">
@@ -42,7 +41,9 @@
                             </div>
 
                         {% else %}
-                            <img src="{{ asset('images/default-business.png') }}" class="card-img-top" alt="{{ business.name }}">
+                            <img src="{{ asset('images/default-business.png') }}"
+                                 class="card-img-top"
+                                 alt="{{ business.name }}">
                         {% endif %}
 
                         <div class="card-body">
@@ -51,7 +52,6 @@
                         </div>
 
                     </div>
-
                 </div>
             {% else %}
                 <p>Aucun commerce pour cet utilisateur.</p>
@@ -60,123 +60,117 @@
     </div>
 
 
+    {# --- MODAL --- #}
     <div class="modal fade" id="businessModal" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content" id="modal-content-area">
-                <!-- le contenu AJAX arrive ici -->
+                <!-- contenu AJAX -->
             </div>
         </div>
     </div>
 
-    <style>
-        .carousel-img {
-            height: 300px;
-            object-fit: cover;
-        }
-    </style>
+    {% block javascripts %}
+        <script>
 
-    <script>
-        document.querySelectorAll(".business-card").forEach(card => {
-            card.addEventListener("click", function () {
-                const id = this.dataset.id;
+    document.querySelectorAll(".business-card").forEach(card => {
+    card.addEventListener("click", function () {
+    const id = this.dataset.id;
 
-                fetch("/business/" + id)
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById("modal-content-area").innerHTML = html;
+    fetch("/business/" + id)
+    .then(response => response.text())
+    .then(html => {
+    document.getElementById("modal-content-area").innerHTML = html;
 
-                        let modal = new bootstrap.Modal(document.getElementById("businessModal"));
-                        modal.show();
-                    });
-            });
-        });
-        // Fonction pour gérer les uploads de photos avec previews
-        function handlePhotoUpload(input, businessId) {
-            const filePreviewsContainer = document.getElementById(`filePreviews${businessId}`);
-            const photoCountElement = document.getElementById(`photoCount${businessId}`);
-            const form = input.closest('form');
+    const modal = new bootstrap.Modal(document.getElementById("businessModal"));
+    modal.show();
 
-            if (!filePreviewsContainer) return;
+    attachFileUploadEvents();
+    });
+    });
+    });
 
-            // Reset
-            filePreviewsContainer.innerHTML = '';
-            filePreviewsContainer.classList.add('d-none');
-            photoCountElement.textContent = '';
 
-            const files = Array.from(input.files);
-            if (files.length === 0) return;
 
-            // Limite à 5 images
-            const limitedFiles = files.slice(0, 5);
-            if (files.length > 5) {
-                alert('Limite de 5 images atteinte. Les premières 5 seront utilisées.');
-            }
+    function handlePhotoUpload(input, businessId) {
+    const container = document.getElementById(`filePreviews${businessId}`);
+    const countElement = document.getElementById(`photoCount${businessId}`);
+    const form = input.closest("form");
 
-            limitedFiles.forEach((file, index) => {
-                if (!file.type.startsWith('image/')) return; // Ignorer non-images
+    if (!container) return;
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const previewDiv = document.createElement('div');
-                    previewDiv.className = 'photo-preview';
-                    previewDiv.innerHTML = `
-                <img src="${e.target.result}" alt="${file.name}">
-                <button type="button" class="remove-photo" onclick="removePhoto(this, ${index}, '${businessId}')">&times;</button>
-            `;
-                    filePreviewsContainer.appendChild(previewDiv);
+    container.innerHTML = "";
+    container.classList.add("d-none");
+    countElement.textContent = "";
 
-                    // Ajouter l'input hidden pour garder le fichier (pour submit)
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'file';
-                    hiddenInput.name = 'photos[]';
-                    hiddenInput.style.display = 'none';
-                    hiddenInput.files = [file]; // Pas standard, mais fonctionne pour FormData
-                    form.appendChild(hiddenInput);
-                };
-                reader.readAsDataURL(file);
-            });
+    let files = Array.from(input.files);
 
-            // Afficher container et compteur
-            filePreviewsContainer.classList.remove('d-none');
-            photoCountElement.innerHTML = `<i class="bi bi-images me-1"></i>${limitedFiles.length} image(s) sélectionnée(s)`;
-            photoCountElement.className = 'text-primary fw-medium';
-        }
+    // max 5
+    const limited = files.slice(0, 5);
+    if (files.length > 5) {
+    alert("Limite de 5 images atteinte.");
+    }
 
-        // Fonction pour supprimer une preview
-        window.removePhoto = function(button, index, businessId) {
-            const container = document.getElementById(`filePreviews${businessId}`);
-            const previews = container.querySelectorAll('.photo-preview');
-            if (previews[index]) {
-                previews[index].remove();
-            }
-            // Mise à jour compteur
-            const remaining = container.querySelectorAll('.photo-preview').length;
-            const photoCountElement = document.getElementById(`photoCount${businessId}`);
-            if (remaining === 0) {
-                container.classList.add('d-none');
-                photoCountElement.textContent = '';
-            } else {
-                photoCountElement.innerHTML = `<i class="bi bi-images me-1"></i>${remaining} image(s) sélectionnée(s)`;
-            }
-            // Optionnel : Retirer le fichier du form (re-scan si besoin)
-        }
+    limited.forEach((file, index) => {
+    if (!file.type.startsWith("image/")) return;
 
-        // Attachement des listeners sur modals shown
-        document.addEventListener('DOMContentLoaded', function() {
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                modal.addEventListener('shown.bs.modal', function() {
-                    const fileInputs = modal.querySelectorAll('input[type="file"][id^="photosInput"]');
-                    fileInputs.forEach(input => {
-                        const businessId = input.id.replace('photosInput', '');
-                        input.addEventListener('change', function() {
-                            handlePhotoUpload(this, businessId);
-                        });
-                    });
-                });
-            });
-        });
+    const reader = new FileReader();
+    reader.onload = e => {
+    const preview = document.createElement("div");
+    preview.className = "photo-preview";
+    preview.innerHTML = `
+    <img src="${e.target.result}">
+    <button type="button"
+            class="remove-photo"
+            onclick="removePhoto(this, ${index}, '${businessId}')">
+        &times;
+    </button>
+    `;
+
+    container.appendChild(preview);
+    };
+
+    reader.readAsDataURL(file);
+    });
+
+    container.classList.remove("d-none");
+    countElement.innerHTML = `<i class="bi bi-images me-1"></i> ${limited.length} image(s) sélectionnée(s)`;
+    countElement.classList.add("text-primary", "fw-medium");
+    }
+
+
+
+    window.removePhoto = function (btn, index, businessId) {
+    const container = document.getElementById(`filePreviews${businessId}`);
+    const previews = container.querySelectorAll(".photo-preview");
+
+    if (previews[index]) {
+    previews[index].remove();
+    }
+
+    const remaining = container.querySelectorAll(".photo-preview").length;
+    const countElement = document.getElementById(`photoCount${businessId}`);
+
+    if (remaining === 0) {
+    container.classList.add("d-none");
+    countElement.textContent = "";
+    } else {
+    countElement.innerHTML = `<i class="bi bi-images me-1"></i> ${remaining} image(s) sélectionnée(s)`;
+    }
+    };
+
+
+    function attachFileUploadEvents() {
+    const inputs = document.querySelectorAll('input[type="file"][id^="photosInput"]');
+
+    inputs.forEach(input => {
+    const businessId = input.id.replace("photosInput", "");
+    input.addEventListener("change", function () {
+    handlePhotoUpload(this, businessId);
+    });
+    });
+    }
 
     </script>
+{% endblock %}
 
 {% endblock %}

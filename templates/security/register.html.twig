@@ -3,63 +3,191 @@
 {% block title %}Inscription{% endblock %}
 
 {% block body %}
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh; background: #f5f6fa;">
-        <div class="card shadow-lg p-4" style="width: 450px; border-radius: 12px;">
+
+    <div class="register-wrapper d-flex justify-content-center align-items-center">
+        <div class="register-card shadow-lg p-4">
+
+            <!-- Header -->
             <div class="text-center mb-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" style="height: 60px; margin-bottom: 10px;">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="logo-img">
                 <h3 class="fw-bold">App-Review</h3>
                 <p class="text-muted">Créez votre compte</p>
             </div>
 
-            {% for message in app.flashes('error') %}
-                <div class="alert alert-danger">{{ message }}</div>
-            {% endfor %}
-            {% for message in app.flashes('success') %}
-                <div class="alert alert-success">{{ message }}</div>
-            {% endfor %}
+            <!-- Formulaire -->
+            <form method="POST" action="{{ path('app_register') }}" enctype="multipart/form-data">
 
-            <form method="POST" action="{{ path('app_register') }}">
                 <div class="mb-3">
                     <label for="name" class="form-label">Nom</label>
-                    <input type="text" class="form-control form-control-lg" id="name" name="name" required>
+                    <input type="text" class="form-control form-control-lg input-focus" id="name" name="name" required>
                 </div>
 
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control form-control-lg" id="email" name="email" required>
+                    <input type="email" class="form-control form-control-lg input-focus" id="email" name="email" required>
                 </div>
 
+                <!-- Mot de passe + icône -->
                 <div class="mb-3">
                     <label for="password" class="form-label">Mot de passe</label>
-                    <input type="password" class="form-control form-control-lg" id="password" name="password" required>
+                    <div class="password-group">
+                        <input type="password" class="form-control form-control-lg input-focus" id="password" name="password" required>
+                        <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
+                    </div>
                 </div>
 
+                <!-- Rôle -->
                 <div class="mb-3">
                     <label for="role" class="form-label">Rôle</label>
-                    <select name="role" id="role" class="form-select form-select-lg">
+                    <select name="role" id="role" class="form-select form-select-lg input-focus">
                         <option value="CUSTOMER">Customer</option>
                         <option value="SERVICE_OWNER">Service Owner</option>
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" style="transition: 0.3s;">
+                <!-- CIN (affiché dynamiquement) -->
+                <div class="mb-3" id="cinField" style="display:none;">
+                    <label for="cin" class="form-label">Numéro CIN</label>
+                    <input type="text" class="form-control form-control-lg input-focus" id="cin" name="cin">
+                </div>
+
+                <!-- Photo -->
+                <div class="mb-3">
+                    <label for="photo" class="form-label">Photo</label>
+                    <input type="file" class="form-control form-control-lg input-focus" id="photo" name="photo">
+                </div>
+
+                <!-- Button -->
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold register-btn">
                     S’inscrire
                 </button>
 
+                <!-- Footer link -->
                 <div class="text-center mt-3">
-                    <p class="mb-0">Déjà un compte ? <a href="{{ path('app_login') }}" class="text-decoration-none fw-semibold">Connectez-vous</a></p>
+                    <p class="mb-0">Déjà un compte ?
+                        <a href="{{ path('app_login') }}" class="text-decoration-none fw-semibold link-login">
+                            Connectez-vous
+                        </a>
+                    </p>
                 </div>
+
             </form>
         </div>
     </div>
 
+
+    <!-- ========================= CSS ========================= -->
     <style>
-        .card:hover {
-            transform: translateY(-5px);
-            transition: all 0.3s ease;
+
+        /* --- Container --- */
+        .register-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e3eeff, #eff4ff, #ffffff);
+            padding: 20px;
+            backdrop-filter: blur(4px);
         }
-        .btn-primary:hover {
-            background-color: #0056b3;
+
+        /* --- Card --- */
+        .register-card {
+            width: 480px;
+            background: #ffffff;
+            border-radius: 16px;
+            transition: 0.3s ease;
+        }
+
+        .register-card:hover {
+            transform: translateY(-6px);
+        }
+
+        /* --- Logo --- */
+        .logo-img {
+            height: 70px;
+            margin-bottom: 10px;
+        }
+
+        /* --- Input + effects --- */
+        .input-focus {
+            border-radius: 12px;
+            transition: 0.25s;
+        }
+
+        .input-focus:focus {
+            border-color: #4c8bf5 !important;
+            box-shadow: 0 0 8px rgba(0, 107, 255, 0.3);
+        }
+
+        /* --- Password group with icon --- */
+        .password-group {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 22px;
+            opacity: 0.6;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+        }
+
+        /* --- Submit button --- */
+        .register-btn {
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 5px;
+            font-size: 17px;
+            transition: 0.3s;
+        }
+
+        .register-btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* --- Link --- */
+        .link-login {
+            color: #0b5ed7;
+        }
+
+        .link-login:hover {
+            text-decoration: underline;
         }
     </style>
+
+
+    <!-- ========================= JS ========================= -->
+    <script>
+        // Affichage/masquage mot de passe
+        const passwordInput = document.getElementById("password");
+        const togglePassword = document.getElementById("togglePassword");
+
+        togglePassword.addEventListener("click", function () {
+            const type = passwordInput.type === "password" ? "text" : "password";
+            passwordInput.type = type;
+
+            this.classList.toggle("bi-eye");
+            this.classList.toggle("bi-eye-slash");
+        });
+
+        // Afficher champ CIN seulement pour Service Owner
+        const roleSelect = document.getElementById("role");
+        const cinField = document.getElementById("cinField");
+
+        roleSelect.addEventListener("change", () => {
+            cinField.style.display = roleSelect.value === "SERVICE_OWNER" ? "block" : "none";
+        });
+
+        // Animation pour empêcher double submit
+        document.querySelector("form").addEventListener("submit", function () {
+            const btn = document.querySelector(".register-btn");
+            btn.innerHTML = "Création du compte...";
+            btn.disabled = true;
+        });
+    </script>
+
 {% endblock %}

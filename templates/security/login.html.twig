@@ -3,58 +3,182 @@
 {% block title %}Connexion{% endblock %}
 
 {% block body %}
-    <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh; background: #f5f6fa;">
-        <div class="card shadow-lg p-4" style="width: 400px; border-radius: 10px;">
+
+    <div class="login-wrapper d-flex justify-content-center align-items-center">
+
+        <div class="login-card shadow-lg p-4">
+
+            <!-- Logo + Titre -->
             <div class="text-center mb-4">
                 <img src="{{ asset('images/logo.png') }}" class="logo-login" alt="Logo">
                 <h3 class="fw-bold">App-Review</h3>
                 <p class="text-muted">Connectez-vous pour continuer</p>
             </div>
 
+            <!-- SUCCÈS -->
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+
+            <!-- ERREUR -->
             {% if error %}
                 <div class="alert alert-danger">
                     {{ error.messageKey|trans(error.messageData, 'security') }}
                 </div>
             {% endif %}
 
-            <form method="post">
-                <div class="mb-3">
+            <!-- FORM -->
+            <form method="post" id="loginForm">
+
+                <div class="form-group mb-3">
                     <label for="inputEmail" class="form-label">Email</label>
-                    <input type="email" value="{{ last_username }}" name="_username" id="inputEmail" class="form-control form-control-lg" required autofocus>
+                    <input type="email"
+                           value="{{ last_username }}"
+                           name="_username"
+                           id="inputEmail"
+                           class="form-control input-focus form-control-lg"
+                           required autofocus>
                 </div>
 
-                <div class="mb-3">
+                <div class="form-group mb-3">
                     <label for="inputPassword" class="form-label">Mot de passe</label>
-                    <input type="password" name="_password" id="inputPassword" class="form-control form-control-lg" required>
+                    <div class="password-group">
+                        <input type="password"
+                               name="_password"
+                               id="inputPassword"
+                               class="form-control input-focus form-control-lg"
+                               required>
+
+                        <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
+                    </div>
                 </div>
 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-                <button class="btn btn-primary btn-lg w-100 fw-bold" type="submit" style="transition: 0.3s;">
+                <button class="btn btn-primary btn-lg w-100 fw-bold mt-2 login-btn" type="submit">
                     Se connecter
                 </button>
 
                 <div class="text-center mt-3">
-                    <p class="mb-0">Vous n'avez pas de compte ? <a href="{{ path('app_register') }}" class="text-decoration-none fw-semibold">S’inscrire</a></p>
+                    <p class="mb-0">Vous n'avez pas de compte ?
+                        <a href="{{ path('app_register') }}" class="text-decoration-none fw-semibold link-register">
+                            S’inscrire
+                        </a>
+                    </p>
                 </div>
             </form>
+
         </div>
     </div>
 
+    <!-- ===================== CSS ===================== -->
     <style>
-        .card:hover {
-            transform: translateY(-5px);
-            transition: all 0.3s ease;
+
+        /* --- Arrière-plan premium --- */
+        .login-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #e3eeff, #eff4ff, #fff);
+            backdrop-filter: blur(4px);
+            padding: 20px;
         }
 
-        .btn-primary:hover {
-            background-color: #0056b3;
+        /* --- Carte --- */
+        .login-card {
+            width: 420px;
+            background: #ffffff;
+            border-radius: 16px;
+            transition: 0.3s ease-in-out;
         }
+
+        .login-card:hover {
+            transform: translateY(-6px);
+        }
+
+        /* --- Logo --- */
         .logo-login {
-            width: 90px; /* augmente ici (ex: 250px, 300px…) */
+            width: 110px;
             height: auto;
-            display: block;
-            margin: 0 auto 7px; /* centrer + espacement */
+            margin-bottom: 10px;
         }
+
+        /* --- Inputs --- */
+        .input-focus {
+            transition: 0.25s;
+            border-radius: 10px;
+        }
+
+        .input-focus:focus {
+            border-color: #4c8bf5 !important;
+            box-shadow: 0 0 8px rgba(76, 139, 245, 0.4);
+        }
+
+        /* --- Groupe mot de passe + œil --- */
+        .password-group {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 22px;
+            opacity: 0.6;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+        }
+
+        /* --- Bouton connexion --- */
+        .login-btn {
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 17px;
+            transition: 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        /* --- Lien inscription --- */
+        .link-register {
+            color: #0b5ed7;
+        }
+
+        .link-register:hover {
+            text-decoration: underline;
+        }
+
     </style>
+
+
+    <!-- ===================== JS ===================== -->
+    <script>
+        // Toggle affichage mot de passe
+        const passwordInput = document.getElementById("inputPassword");
+        const togglePassword = document.getElementById("togglePassword");
+
+        togglePassword.addEventListener("click", function () {
+            const type = passwordInput.type === "password" ? "text" : "password";
+            passwordInput.type = type;
+
+            this.classList.toggle("bi-eye");
+            this.classList.toggle("bi-eye-slash");
+        });
+
+        // Animation sur le bouton au submit
+        document.getElementById("loginForm").addEventListener("submit", function () {
+            const btn = document.querySelector(".login-btn");
+            btn.innerHTML = "Connexion...";
+            btn.disabled = true;
+        });
+    </script>
+
 {% endblock %}
