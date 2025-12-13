@@ -3,10 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Business;
+use App\Entity\FavoriteBusiness;
 use App\Entity\User;
 use App\Entity\Category;
+use App\Repository\FavoriteBusinessRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -200,10 +203,14 @@ class BusinessController extends AbstractController
     public function show(Business $business): Response
 
     {
+        $isFavorited = $business->isFavoritedByUser($this->getUser());
+
         return $this->render('business/modal_show.html.twig', [
             'business' => $business,
             'reviews' => $business->getReviews(),
             'rating' => $business->getAverageRating(),
+            'isFavorited' => $isFavorited,
+
         ]);
     }
 

@@ -60,6 +60,50 @@ class BusinessRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+// Dans BusinessRepository.php
+    public function findWithFilters(array $filters = [])
+    {
+        $qb = $this->createQueryBuilder('b')
+            ->leftJoin('b.category', 'c')
+            ->leftJoin('b.reviews', 'r')
+            ->addSelect('c')
+            ->groupBy('b.id');
 
+        // Filtre par recherche
+        if (!empty($filters['search'])) {
+            $qb->andWhere('b.name LIKE :search OR b.description LIKE :search')
+                ->setParameter('search', '%' . $filters['search'] . '%');
+        }
+
+        // Filtre par catégorie
+        if (!empty($filters['category'])) {
+            $qb->andWhere('c.id = :categoryId')
+                ->setParameter('categoryId', $filters['category']);
+        }
+
+        // Filtre par note minimale
+        if (!empty($filters['min_rating'])) {
+            $qb->andHaving('AVG(r.rating) >= :minRating')
+                ->setParameter('minRating', $filters['min_rating']);
+        }
+
+        // Filtre par site web
+        if (!empty($filters['has_website'])) {
+            $qb->andWhere('b.website IS NOT NULL');
+        }
+
+
+        // Tri
+        switch ($filters['sort'] ?? 'newest') {
+            case 'name_asc':
+                $qb->orderBy('b.name', 'ASC');
+                break;
+            case 'name_desc':
+                $qb->orderBy('b.name', 'DESC');
+                break;
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 
 }

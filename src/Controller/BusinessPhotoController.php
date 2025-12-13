@@ -160,9 +160,12 @@ class BusinessPhotoController extends AbstractController
     public function all(EntityManagerInterface $em): Response
     {
         $photos = $em->getRepository(BusinessPhoto::class)->findAll();
+        $businesses = $em->getRepository(Business::class)->findAll();
 
         return $this->render('business/photo_list.html.twig', [
             'photos' => $photos,
+            'businesses' => $businesses,
+
         ]);
     }
 

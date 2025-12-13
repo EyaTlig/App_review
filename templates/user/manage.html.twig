@@ -1,156 +1,627 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gestion des Utilisateurs{% endblock %}
+{% block title %}Gestion des Utilisateurs - Administration{% endblock %}
 
 {% block body %}
-<div class="container mt-5">
-    <h2>Gestion des Utilisateurs</h2>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Gestion des Utilisateurs</h1>
+                <p class="text-muted mb-0">Administration des comptes utilisateurs de la plateforme</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetForm()">
+                <i class="fa fa-user-plus me-2"></i>Nouvel utilisateur
+            </button>
+        </div>
 
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetForm()">Ajouter un utilisateur</button>
+        <!-- Flash messages -->
+        <div id="flashMessages">
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="fa fa-check-circle me-2"></i>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="fa fa-exclamation-circle me-2"></i>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
 
-    <!-- Flash messages -->
-    <div id="flashMessages">
-        {% for message in app.flashes('success') %}
-            <div class="alert alert-success">{{ message }}</div>
-        {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="alert alert-danger">{{ message }}</div>
-        {% endfor %}
-    </div>
+        <!-- Carte principale avec tableau -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher un utilisateur..." onkeyup="filterTable()">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-filter me-1"></i>Filtrer par rôle
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="filterByRole('all')">Tous les rôles</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRole('ADMIN')">Administrateurs</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRole('CUSTOMER')">Clients</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRole('SERVICE_OWNER')">Propriétaires</a></li>
+                            </ul>
 
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Email</th>
-            <th>Rôle</th>
-            <th>Photo</th>
-            <th>CIN</th>
-            <th>Validé</th>
-            <th>Actif</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.readableRole }}</td>
-                <td>
-                    {% if user.photo %}
-                        <img src="{{ asset('uploads/' ~ user.photo) }}" width="50" class="rounded">
-                    {% endif %}
-                </td>
-                <td>{{ user.cin }}</td>
-                <td>
-                    {% if user.role == 'SERVICE_OWNER' %}
-                        {% if user.isValidated %}
-                            <span class="badge bg-success">Validé</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des utilisateurs -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="usersTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <span>Utilisateur</span>
+                                    <a href="#" class="ms-1 text-muted"><i class="fa fa-sort"></i></a>
+                                </div>
+                            </th>
+                            <th>Rôle</th>
+                            <th>CIN</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-center">Validation</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for user in users %}
+                            <tr class="user-row" data-role="{{ user.role }}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3">
+                                            {% if user.photo %}
+                                                <img src="{{ asset('uploads/' ~ user.photo) }}"
+                                                     class="rounded-circle" width="40" height="40"
+                                                     alt="{{ user.name }}"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name={{ user.name|url_encode }}&background=random'">
+                                            {% else %}
+                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px; background-color: #e9ecef; color: #6c757d;">
+                                                    {{ user.name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">{{ user.name }}</strong>
+                                            <small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set roleColors = {
+                                        'ADMIN': 'danger',
+                                        'SERVICE_OWNER': 'info',
+                                        'CUSTOMER': 'success'
+                                    } %}
+                                    <span class="badge bg-{{ roleColors[user.role]|default('secondary') }} bg-opacity-10 text-{{ roleColors[user.role]|default('secondary') }}">
+                                    <i class="fa fa-user-{{ user.role == 'ADMIN' ? 'shield' : (user.role == 'SERVICE_OWNER' ? 'tie' : 'user') }} me-1"></i>
+                                    {{ user.readableRole }}
+                                </span>
+                                </td>
+                                <td>
+                                    {% if user.cin %}
+                                        <code class="bg-light px-2 py-1 rounded">{{ user.cin }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if user.isActive %}
+                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                        <i class="fa fa-circle me-1" style="font-size: 6px;"></i>
+                                        Actif
+                                    </span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        <i class="fa fa-circle me-1" style="font-size: 6px;"></i>
+                                        Inactif
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if user.role == 'SERVICE_OWNER' %}
+                                        {% if user.isValidated %}
+                                            <span class="badge bg-success bg-opacity-10 text-success">
+                                            <i class="fa fa-check me-1"></i>
+                                            Validé
+                                        </span>
+                                        {% else %}
+                                            <a href="{{ path('user_validate', {id: user.id}) }}"
+                                               class="btn btn-sm btn-outline-warning"
+                                               title="Valider ce propriétaire">
+                                                <i class="fa fa-hourglass-half me-1"></i>
+                                                En attente
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary"
+                                                data-bs-toggle="modal" data-bs-target="#userModal"
+                                                onclick="editUser(
+                                                {{ user.id }},
+                                                        '{{ user.name|e('js') }}',
+                                                        '{{ user.email|e('js') }}',
+                                                        '{{ user.role|e('js') }}',
+                                                        '{{ user.cin|e('js') }}'
+                                                        )"
+                                                title="Modifier">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        {% if user.isActive %}
+                                            <a href="{{ path('user_toggle', {id: user.id}) }}"
+                                               class="btn btn-outline-warning"
+                                               title="Désactiver">
+                                                <i class="fa fa-toggle-on"></i>
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ path('user_toggle', {id: user.id}) }}"
+                                               class="btn btn-outline-secondary"
+                                               title="Activer">
+                                                <i class="fa fa-toggle-off"></i>
+                                            </a>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-outline-danger"
+                                                onclick="confirmDelete({{ user.id }}, '{{ user.name|e('js') }}')"
+                                                title="Supprimer">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                         {% else %}
-                            <a href="{{ path('user_validate', {id: user.id}) }}" class="btn btn-info btn-sm">Valider</a>
-                        {% endif %}
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user.isActive %}
-                        <a href="{{ path('user_toggle', {id: user.id}) }}" class="btn btn-warning btn-sm">Désactiver</a>
-                    {% else %}
-                        <a href="{{ path('user_toggle', {id: user.id}) }}" class="btn btn-secondary btn-sm">Activer</a>
-                    {% endif %}
-                </td>
-                <td>
-                    <button class="btn btn-warning btn-sm"
-                            data-bs-toggle="modal" data-bs-target="#userModal"
-                            onclick="editUser({{ user.id }}, '{{ user.name }}', '{{ user.email }}', '{{ user.role }}', '{{ user.cin }}')">Modifier</button>
-                    <a href="{{ path('user_delete', {'id': user.id}) }}" class="btn btn-danger btn-sm"
-                       onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?')">Supprimer</a>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-users fa-2x text-muted"></i>
+                                        </div>
+                                        <h5 class="mb-2">Aucun utilisateur trouvé</h5>
+                                        <p class="text-muted mb-3">Commencez par créer votre premier utilisateur</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal" onclick="resetForm()">
+                                            <i class="fa fa-user-plus me-2"></i>Créer un utilisateur
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-<!-- Modal Add/Edit -->
-<div class="modal fade" id="userModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="userForm" method="post" action="{{ path('user_add') }}" enctype="multipart/form-data">
-                <input type="hidden" id="userId" name="id">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="userModalLabel">Ajouter un utilisateur</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label>Nom</label>
-                        <input type="text" name="name" id="userName" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" name="email" id="userEmail" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Mot de passe</label>
-                        <input type="password" name="password" id="userPassword" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>Rôle</label>
-                        <select name="role" id="userRole" class="form-control">
-                            <option value="CUSTOMER">Customer</option>
-                            <option value="SERVICE_OWNER">Service Owner</option>
-                        </select>
-                    </div>
-                    <div id="cinField" class="mb-3" style="display:none;">
-                        <label>N° CIN</label>
-                        <input type="text" name="cin" id="userCin" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label>Photo</label>
-                        <input type="file" name="photo" id="userPhoto" class="form-control">
+            <!-- Pagination -->
+            {% if users|length > 0 %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Affichage de 1 à {{ users|length }} sur {{ users|length }} utilisateurs</span>
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
-                </div>
-            </form>
+            {% endif %}
         </div>
     </div>
-</div>
+
+    <!-- Modal Ajout/Modification -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <form id="userForm" method="post" action="{{ path('user_add') }}" enctype="multipart/form-data">
+                    <input type="hidden" id="userId" name="id">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="userModalLabel">
+                            <i class="fa fa-user-plus me-2"></i>
+                            <span id="modalTitleText">Ajouter un utilisateur</span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="userName" class="form-label fw-semibold">Nom complet *</label>
+                                <input type="text" name="name" id="userName" class="form-control" required
+                                       placeholder="Ex: Jean Dupont">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="userEmail" class="form-label fw-semibold">Adresse email *</label>
+                                <input type="email" name="email" id="userEmail" class="form-control" required
+                                       placeholder="exemple@domaine.com">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="userPassword" class="form-label fw-semibold">
+                                    <span id="passwordLabel">Mot de passe</span>
+                                    <span class="text-muted small" id="passwordInfo">(Laisser vide pour conserver l'actuel)</span>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" name="password" id="userPassword"
+                                           class="form-control" placeholder="●●●●●●●●">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            onclick="togglePasswordVisibility()">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="userRole" class="form-label fw-semibold">Rôle *</label>
+                                <select name="role" id="userRole" class="form-control select2-style" required>
+                                    <option value="">Sélectionner un rôle</option>
+                                    <option value="ADMIN">Administrateur</option>
+                                    <option value="CUSTOMER">Client</option>
+                                    <option value="SERVICE_OWNER">Propriétaire de service</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6" id="cinField" style="display:none;">
+                                <label for="userCin" class="form-label fw-semibold">Numéro CIN *</label>
+                                <input type="text" name="cin" id="userCin" class="form-control"
+                                       placeholder="Ex: AA123456">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="userPhoto" class="form-label fw-semibold">Photo de profil</label>
+                                <input type="file" name="photo" id="userPhoto"
+                                       class="form-control" accept="image/*">
+                                <div class="form-text text-muted">
+                                    Formats acceptés: JPG, PNG (max 2MB)
+                                </div>
+                            </div>
+
+                            <!-- Prévisualisation de la photo -->
+                            <div class="col-12" id="photoPreviewContainer" style="display:none;">
+                                <label class="form-label fw-semibold">Prévisualisation</label>
+                                <div class="border rounded p-3 text-center">
+                                    <img id="photoPreview" class="rounded-circle"
+                                         style="width: 100px; height: 100px; object-fit: cover;">
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                onclick="removePhotoPreview()">
+                                            <i class="fa fa-trash me-1"></i>Supprimer la photo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                            <i class="fa fa-save me-2"></i>
+                            <span id="submitButtonText">Ajouter</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-4">
+                    <div class="icon-wrapper-lg bg-danger bg-opacity-10 rounded-circle mb-3 mx-auto">
+                        <i class="fa fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <h5 class="mb-3">Confirmer la suppression</h5>
+                    <p class="text-muted mb-4" id="deleteMessage">
+                        Êtes-vous sûr de vouloir supprimer cet utilisateur ?
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fa fa-trash me-2"></i>Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .user-row:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+        }
+
+        .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 1.2rem;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .select2-style {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            background-size: 16px 12px;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+
+        .alert {
+            border: none;
+            border-left: 4px solid;
+            border-radius: 8px;
+        }
+
+        .badge {
+            padding: 0.35em 0.65em;
+            font-weight: 500;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     <script>
+        let currentUserId = null;
+
+        // Gestion du champ CIN selon le rôle
         const roleSelect = document.getElementById('userRole');
         const cinField = document.getElementById('cinField');
+        const cinInput = document.getElementById('userCin');
 
         roleSelect.addEventListener('change', function() {
-            cinField.style.display = (this.value === 'SERVICE_OWNER') ? 'block' : 'none';
+            if (this.value === 'SERVICE_OWNER') {
+                cinField.style.display = 'block';
+                cinInput.required = true;
+            } else {
+                cinField.style.display = 'none';
+                cinInput.required = false;
+            }
         });
 
-        function editUser(id, name, email, role, cin) {
-            document.getElementById('userForm').action = "{{ path('user_edit', {'id': 0}) }}".replace('0', id);
-            document.getElementById('userModalLabel').innerText = "Modifier l'utilisateur";
-            document.getElementById('modalSubmitBtn').innerText = "Enregistrer";
+        // Prévisualisation de la photo
+        const photoInput = document.getElementById('userPhoto');
+        const photoPreview = document.getElementById('photoPreview');
+        const previewContainer = document.getElementById('photoPreviewContainer');
 
+        if (photoInput) {
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoPreview.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function removePhotoPreview() {
+            photoInput.value = '';
+            previewContainer.style.display = 'none';
+            photoPreview.src = '';
+        }
+
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('userPassword');
+            const toggleBtn = event.currentTarget;
+            const icon = toggleBtn.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fa fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fa fa-eye';
+            }
+        }
+
+        function editUser(id, name, email, role, cin) {
+            currentUserId = id;
+
+            document.getElementById('userForm').action = "{{ path('user_edit', {'id': 0}) }}".replace('0', id);
+            document.getElementById('modalTitleText').textContent = 'Modifier l\'utilisateur';
+            document.getElementById('submitButtonText').textContent = 'Enregistrer';
+            document.getElementById('passwordLabel').textContent = 'Nouveau mot de passe';
+            document.getElementById('passwordInfo').style.display = 'inline';
+
+            // Remplir les champs
             document.getElementById('userName').value = name;
             document.getElementById('userEmail').value = email;
             document.getElementById('userRole').value = role;
             document.getElementById('userCin').value = cin || '';
-            cinField.style.display = (role === 'SERVICE_OWNER') ? 'block' : 'none';
             document.getElementById('userPassword').value = '';
+
+            // Afficher/masquer CIN
+            if (role === 'SERVICE_OWNER') {
+                cinField.style.display = 'block';
+                cinInput.required = true;
+            } else {
+                cinField.style.display = 'none';
+                cinInput.required = false;
+            }
+
+            // Si l'utilisateur a déjà une photo, l'afficher en prévisualisation
+            if (document.querySelector(`tr[data-user-id="${id}"] .avatar img`)) {
+                const existingPhoto = document.querySelector(`tr[data-user-id="${id}"] .avatar img`).src;
+                photoPreview.src = existingPhoto;
+                previewContainer.style.display = 'block';
+            }
         }
 
         function resetForm() {
             document.getElementById('userForm').action = "{{ path('user_add') }}";
-            document.getElementById('userModalLabel').innerText = "Ajouter un utilisateur";
-            document.getElementById('modalSubmitBtn').innerText = "Ajouter";
+            document.getElementById('modalTitleText').textContent = 'Ajouter un utilisateur';
+            document.getElementById('submitButtonText').textContent = 'Ajouter';
+            document.getElementById('passwordLabel').textContent = 'Mot de passe';
+            document.getElementById('passwordInfo').style.display = 'none';
             document.getElementById('userForm').reset();
             cinField.style.display = 'none';
+            previewContainer.style.display = 'none';
+            currentUserId = null;
         }
+
+        function confirmDelete(id, name) {
+            document.getElementById('deleteMessage').innerHTML =
+                `Êtes-vous sûr de vouloir supprimer <strong>"${name}"</strong> ?<br>
+         <small class="text-danger">Cette action est irréversible et supprimera toutes les données associées.</small>`;
+
+            document.getElementById('confirmDeleteBtn').href = `/user/delete/${id}`;
+
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.user-row');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        function filterByRole(role) {
+            const rows = document.querySelectorAll('.user-row');
+
+            rows.forEach(row => {
+                if (role === 'all' || row.dataset.role === role) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Animation des lignes au survol
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('.user-row');
+            rows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(4px)';
+                    this.style.transition = 'all 0.2s ease';
+                });
+
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+
+                // Cliquer sur la ligne pour voir les détails
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('button') && !e.target.closest('a')) {
+                        const userId = this.querySelector('td:first-child').dataset.userId;
+                        if (userId) {
+                            window.location.href = `/user/${userId}`;
+                        }
+                    }
+                });
+            });
+
+            // Gestion du formulaire
+            const userForm = document.getElementById('userForm');
+            if (userForm) {
+                userForm.addEventListener('submit', function(e) {
+                    const submitBtn = document.getElementById('modalSubmitBtn');
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Traitement...';
+                    submitBtn.disabled = true;
+                });
+            }
+
+            // Auto-dismiss des alertes après 5 secondes
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    setTimeout(() => bsAlert.close(), 5000);
+                });
+            }, 5000);
+        });
     </script>
 {% endblock %}

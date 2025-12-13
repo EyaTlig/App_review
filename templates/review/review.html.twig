@@ -1,126 +1,836 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}Gestion des Avis - Administration{% endblock %}
+
 {% block body %}
-    <h1>Gestion des Reviews</h1>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Gestion des Avis</h1>
+                <p class="text-muted mb-0">Administration des avis clients sur votre plateforme</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal" onclick="resetForm()">
+                <i class="fa fa-plus-circle me-2"></i>Nouvel avis
+            </button>
+        </div>
 
-    <!-- Bouton Ajouter -->
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#reviewModal" onclick="resetForm();">Ajouter une Review</button>
+        <!-- Flash messages -->
+        <div id="flashMessages">
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="fa fa-check-circle me-2"></i>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+            {% for message in app.flashes('error') %}
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                    <i class="fa fa-exclamation-circle me-2"></i>
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
 
-    <!-- Flash Messages -->
-    <div id="flashMessages">
-        {% for message in app.flashes('success') %}
-            <div class="alert alert-success">{{ message }}</div>
-        {% endfor %}
-        {% for message in app.flashes('error') %}
-            <div class="alert alert-danger">{{ message }}</div>
-        {% endfor %}
+        <!-- Statistiques CORRIGÉES -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Total des avis</p>
+                                <h2 class="mb-0 fw-bold">{{ reviews|length }}</h2>
+                                <small class="text-muted">
+                                    {{ reviews|length }} avis au total
+                                </small>
+                            </div>
+                            <div class="icon-wrapper bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-comments text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Avis ce mois</p>
+                                <h2 class="mb-0 fw-bold">{{ reviewsThisMonth|default(0) }}</h2>
+                                {% if reviewsThisMonth is defined and reviews|length > 0 %}
+                                    {% set percentage = (reviewsThisMonth / reviews|length * 100)|round(1) %}
+                                    <small class="text-success fw-semibold">
+                                        <i class="fa fa-arrow-up me-1"></i>{{ percentage }}% du total
+                                    </small>
+                                {% else %}
+                                    <small class="text-muted">0% du total</small>
+                                {% endif %}
+                            </div>
+                            <div class="icon-wrapper bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-history text-succes"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Moyenne générale</p>
+                                <h2 class="mb-0 fw-bold">
+                                    {% if reviews|length > 0 %}
+                                        {{ (reviews|reduce((sum, review) => sum + review.rating, 0) / reviews|length)|number_format(1) }}
+                                    {% else %}
+                                        0.0
+                                    {% endif %}
+                                </h2>
+                                <div class="rating-display small">
+                                    {% set avgRating = reviews|length > 0 ? (reviews|reduce((sum, review) => sum + review.rating, 0) / reviews|length) : 0 %}
+                                    {% for i in 1..5 %}
+                                        {% if i <= avgRating|round(1) %}
+                                            <i class="fa fa-star text-warning"></i>
+                                        {% elseif i - 0.5 <= avgRating %}
+                                            <i class="fa fa-star-half-alt text-warning"></i>
+                                        {% else %}
+                                            <i class="fa fa-star-o text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="icon-wrapper bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-star text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Avis avec photos</p>
+                                <h2 class="mb-0 fw-bold">
+                                    {% set reviewsWithPhotos = reviews|filter(review => review.photos is defined and review.photos|length > 0) %}
+                                    {{ reviewsWithPhotos|length }}
+                                </h2>
+                                {% if reviews|length > 0 %}
+                                    {% set photosPercentage = (reviewsWithPhotos|length / reviews|length * 100)|round(1) %}
+                                    <small class="text-info">
+                                        {{ photosPercentage }}% des avis
+                                    </small>
+                                {% endif %}
+                            </div>
+                            <div class="icon-wrapper bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-camera text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Carte principale -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher un avis..." onkeyup="filterTable()">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fa fa-filter me-1"></i>Filtrer
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating('all')">Toutes les notes</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- CORRECTION : Chaque option filtre seulement la note exacte -->
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating(5)">
+                                        <i class="fa fa-star text-warning me-2"></i>5 étoiles
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating(4)">
+                                        <i class="fa fa-star text-warning me-2"></i>4 étoiles
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating(3)">
+                                        <i class="fa fa-star text-warning me-2"></i>3 étoiles
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating(2)">
+                                        <i class="fa fa-star text-warning me-2"></i>2 étoiles
+                                    </a></li>
+
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating(1)">
+                                        <i class="fa fa-star text-warning me-2"></i>1 étoile
+                                    </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Options pour les filtres "et plus" -->
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating('4+')">
+                                        <i class="fa fa-star text-warning me-2"></i>4 étoiles et plus
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="filterByRating('3+')">
+                                        <i class="fa fa-star text-warning me-2"></i>3 étoiles et plus
+                                    </a></li>
+                            </ul>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePhotosOnly()" id="photosFilterBtn">
+                                <i class="fa fa-camera me-1"></i>Avec photos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des avis -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="reviewsTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <span>Utilisateur & Business</span>
+                                </div>
+                            </th>
+                            <th>Commentaire</th>
+                            <th class="text-center">Note</th>
+                            <th>Date</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for review in reviews %}
+                            <tr class="review-row" data-rating="{{ review.rating }}" data-has-photos="{% if review.photos is defined and review.photos|length > 0 %}true{% else %}false{% endif %}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3">
+                                            {% if review.user.photo %}
+                                                <img src="{{ asset('uploads/' ~ review.user.photo) }}"
+                                                     class="rounded-circle" width="40" height="40"
+                                                     alt="{{ review.user.name }}"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name={{ review.user.name|url_encode }}&background=random'">
+                                            {% else %}
+                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 40px; height: 40px; background-color: #e9ecef; color: #6c757d;">
+                                                    {{ review.user.name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">{{ review.user.name }}</strong>
+                                            <small class="text-muted">
+                                                <i class="fa fa-store me-1"></i>{{ review.business.name }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="comment-preview">
+                                        {{ review.comment|slice(0, 100) }}{% if review.comment|length > 100 %}...{% endif %}
+                                    </div>
+                                    {% if review.photos is defined and review.photos|length > 0 %}
+                                        <div class="mt-2">
+                                    <span class="badge bg-info bg-opacity-10 text-info">
+                                        <i class="fa fa-camera me-1"></i>{{ review.photos|length }} photo{{ review.photos|length > 1 ? 's' : '' }}
+                                    </span>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="rating-display mb-1">
+                                            {% for i in 1..5 %}
+                                                {% if i <= review.rating %}
+                                                    <i class="fa fa-star text-warning"></i>
+                                                {% else %}
+                                                    <i class="fa fa-star-o text-warning"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">
+                                        {{ review.rating }}/5
+                                    </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ review.createdAt|date('d/m/Y') }}<br>
+                                        <span class="text-muted">{{ review.createdAt|date('H:i') }}</span>
+                                    </small>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-primary"
+                                                data-bs-toggle="modal" data-bs-target="#reviewModal"
+                                                onclick="editReview(
+                                                {{ review.id }},
+                                                {{ review.user.id }},
+                                                {{ review.business.id }},
+                                                        '{{ review.comment|e('js') }}',
+                                                {{ review.rating }}
+                                                        )"
+                                                title="Modifier">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger"
+                                                onclick="confirmDelete({{ review.id }}, '{{ review.user.name|e('js') }}', '{{ review.business.name|e('js') }}')"
+                                                title="Supprimer">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-comments fa-2x text-muted"></i>
+                                        </div>
+                                        <h5 class="mb-2">Aucun avis trouvé</h5>
+                                        <p class="text-muted mb-3">Les utilisateurs n'ont pas encore laissé d'avis</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal" onclick="resetForm()">
+                                            <i class="fa fa-plus-circle me-2"></i>Créer un avis
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if reviews|length > 0 %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Affichage de 1 à {{ reviews|length }} sur {{ reviews|length }} avis</span>
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Tableau des Reviews -->
-    <table class="table table-striped">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>User</th>
-            <th>Business</th>
-            <th>Contenu</th>
-            <th>Note</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for review in reviews %}
-            <tr>
-                <td>{{ review.id }}</td>
-                <td>{{ review.user.name }}</td>
-                <td>{{ review.business.name }}</td>
-                <td>{{ review.comment }}</td>
-                <td>{{ review.rating }}</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#reviewModal"
-                            onclick="editReview({{ review.id }}, {{ review.user.id }}, {{ review.business.id }}, '{{ review.comment|e('js') }}', {{ review.rating }})">
-                        Modifier
-                    </button>
-                    <a href="{{ path('review_delete', {'id': review.id}) }}" class="btn btn-danger btn-sm"
-                       onclick="return confirm('Voulez-vous vraiment supprimer cette review ?')">Supprimer</a>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Modal Ajouter / Modifier Review -->
-    <div class="modal fade" id="reviewModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+    <!-- Modal Ajout/Modification -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
                 <form id="reviewForm" method="post" action="{{ path('add_review') }}">
                     <input type="hidden" id="reviewId" name="id">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="reviewModalLabel">Ajouter une Review</h5>
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="reviewModalLabel">
+                            <i class="fa fa-comment-dots me-2"></i>
+                            <span id="modalTitleText">Ajouter un avis</span>
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label>User</label>
-                            <select name="user" id="reviewUser" class="form-control" required>
-                                <option value="">-- Sélectionnez un utilisateur --</option>
-                                {% for u in users %}
-                                    <option value="{{ u.id }}">{{ u.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label>Business</label>
-                            <select name="business" id="reviewBusiness" class="form-control" required>
-                                <option value="">-- Sélectionnez un business --</option>
-                                {% for b in businesses %}
-                                    <option value="{{ b.id }}">{{ b.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label>Contenu</label>
-                            <textarea name="content" id="reviewContent" class="form-control" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label>Note</label>
-                            <input type="number" name="rating" id="reviewRating" class="form-control" min="1" max="5" required>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="addPhotos" name="addPhotos">
-                            <label class="form-check-label" for="addPhotos">Vous voulez ajouter des photos?</label>
-                        </div>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="reviewUser" class="form-label fw-semibold">Utilisateur *</label>
+                                <select name="user" id="reviewUser" class="form-control" required>
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {% for u in users %}
+                                        <option value="{{ u.id }}">{{ u.name }} ({{ u.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reviewBusiness" class="form-label fw-semibold">Business *</label>
+                                <select name="business" id="reviewBusiness" class="form-control" required>
+                                    <option value="">Sélectionner un business</option>
+                                    {% for b in businesses %}
+                                        <option value="{{ b.id }}">{{ b.name }} - {{ b.category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
 
+                            <div class="col-12">
+                                <label for="reviewRating" class="form-label fw-semibold">Note *</label>
+                                <div class="rating-input mb-3">
+                                    <div class="d-flex align-items-center justify-content-center gap-3">
+                                        {% for i in 1..5 %}
+                                            <div class="star-wrapper" data-value="{{ i }}">
+                                                <i class="fa fa-star-o fa-2x text-warning star-icon"></i>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <input type="hidden" name="rating" id="reviewRating" value="5" required>
+                                    <div class="text-center mt-2">
+                                    <span id="ratingValue" class="badge bg-warning bg-opacity-10 text-warning px-3 py-2">
+                                        5/5 étoiles
+                                    </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="reviewContent" class="form-label fw-semibold">Commentaire *</label>
+                                <textarea name="content" id="reviewContent" class="form-control"
+                                          rows="5" placeholder="Partagez votre expérience..."
+                                          required></textarea>
+                                <div class="form-text">
+                                    Décrivez votre expérience avec ce business. Minimum 10 caractères.
+                                    <span id="charCount" class="float-end">0/500</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border mt-3">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                   id="addPhotos" name="addPhotos" value="1">
+                                            <label class="form-check-label fw-semibold" for="addPhotos">
+                                                <i class="fa fa-camera me-2"></i>Ajouter des photos
+                                            </label>
+                                            <div class="form-text text-muted">
+                                                Vous pourrez ajouter des photos après l'enregistrement de l'avis
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">Ajouter</button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="modalSubmitBtn">
+                            <i class="fa fa-save me-2"></i>
+                            <span id="submitButtonText">Ajouter l'avis</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-4">
+                    <div class="icon-wrapper-lg bg-danger bg-opacity-10 rounded-circle mb-3 mx-auto">
+                        <i class="fa fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <h5 class="mb-3">Confirmer la suppression</h5>
+                    <p class="text-muted mb-4" id="deleteMessage">
+                        Êtes-vous sûr de vouloir supprimer cet avis ?
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fa fa-trash me-2"></i>Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .review-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+        }
+
+        .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .star-wrapper {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .star-wrapper:hover {
+            transform: scale(1.2);
+        }
+
+        .star-wrapper.active .star-icon {
+            font-weight: 900;
+        }
+
+        .comment-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .rating-display {
+            display: flex;
+            gap: 2px;
+        }
+
+        .rating-display .fa-star {
+            font-size: 0.9rem;
+        }
+
+        /* Animation pour les lignes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .review-row {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Styles spécifiques pour les étoiles */
+        .fa-star {
+            color: #ffc107;
+        }
+
+        .fa-star-o {
+            color: #ffc107;
+            opacity: 0.5;
+        }
+
+        .rating-display .fa-star,
+        .rating-display .fa-star-o {
+            font-size: 14px;
+        }
+
+        /* Styles pour les badges de filtre actif */
+        .btn-group .btn-outline-secondary.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        /* Statistiques améliorées */
+        .card .small {
+            font-size: 0.75rem;
+        }
+
+        .rating-display.small .fa-star,
+        .rating-display.small .fa-star-o,
+        .rating-display.small .fa-star-half-alt {
+            font-size: 12px;
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     <script>
+        let currentReviewId = null;
+        let photosOnly = false;
+        let currentRatingFilter = 'all';
+
         function editReview(id, userId, businessId, content, rating) {
+            currentReviewId = id;
+
             document.getElementById('reviewForm').action = "{{ path('review_edit', {'id': 0}) }}".replace('0', id);
-            document.getElementById('reviewModalLabel').innerText = 'Modifier la Review';
-            document.getElementById('modalSubmitBtn').innerText = 'Enregistrer';
+            document.getElementById('modalTitleText').textContent = 'Modifier l\'avis';
+            document.getElementById('submitButtonText').textContent = 'Enregistrer';
             document.getElementById('reviewId').value = id;
             document.getElementById('reviewUser').value = userId;
             document.getElementById('reviewBusiness').value = businessId;
             document.getElementById('reviewContent').value = content;
             document.getElementById('reviewRating').value = rating;
+
+            // Mettre à jour les étoiles
+            setRatingStars(rating);
         }
 
         function resetForm() {
+            currentReviewId = null;
+
             document.getElementById('reviewForm').action = "{{ path('add_review') }}";
-            document.getElementById('reviewModalLabel').innerText = 'Ajouter une Review';
-            document.getElementById('modalSubmitBtn').innerText = 'Ajouter';
+            document.getElementById('modalTitleText').textContent = 'Ajouter un avis';
+            document.getElementById('submitButtonText').textContent = 'Ajouter l\'avis';
             document.getElementById('reviewForm').reset();
+            document.getElementById('reviewId').value = '';
+
+            // Réinitialiser les étoiles à 5
+            setRatingStars(5);
         }
+
+        function setRatingStars(rating) {
+            const stars = document.querySelectorAll('.star-wrapper');
+            const ratingInput = document.getElementById('reviewRating');
+            const ratingValue = document.getElementById('ratingValue');
+
+            // Mettre à jour les étoiles du formulaire
+            stars.forEach((star, index) => {
+                const starIndex = index + 1;
+                const starIcon = star.querySelector('.star-icon');
+
+                if (starIndex <= rating) {
+                    star.classList.add('active');
+                    starIcon.classList.remove('fa-star-o');
+                    starIcon.classList.add('fa-star');
+                } else {
+                    star.classList.remove('active');
+                    starIcon.classList.remove('fa-star');
+                    starIcon.classList.add('fa-star-o');
+                }
+            });
+
+            ratingInput.value = rating;
+            ratingValue.textContent = `${rating}/5 étoiles`;
+        }
+
+        function confirmDelete(id, userName, businessName) {
+            document.getElementById('deleteMessage').innerHTML =
+                `Êtes-vous sûr de vouloir supprimer l'avis de <strong>${userName}</strong>
+         pour <strong>${businessName}</strong> ?<br>
+         <small class="text-danger">Cette action est irréversible.</small>`;
+
+            document.getElementById('confirmDeleteBtn').href = `/review/delete/${id}`;
+
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.review-row');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const rating = parseInt(row.dataset.rating);
+                const hasPhotos = row.dataset.hasPhotos === 'true';
+
+                let shouldShow = text.includes(filter);
+
+                // Appliquer les filtres supplémentaires
+                if (currentRatingFilter !== 'all') {
+                    // CORRECTION : Gérer les filtres exacts et "et plus"
+                    if (typeof currentRatingFilter === 'string' && currentRatingFilter.endsWith('+')) {
+                        // Filtre "et plus" (ex: "4+" = 4 étoiles et plus)
+                        const minRating = parseInt(currentRatingFilter);
+                        shouldShow = shouldShow && rating >= minRating;
+                    } else {
+                        // Filtre exact (ex: 4 = exactement 4 étoiles)
+                        const exactRating = parseInt(currentRatingFilter);
+                        shouldShow = shouldShow && rating === exactRating;
+                    }
+                }
+
+                if (photosOnly) {
+                    shouldShow = shouldShow && hasPhotos;
+                }
+
+                row.style.display = shouldShow ? '' : 'none';
+            });
+        }
+
+        function filterByRating(rating) {
+            currentRatingFilter = rating;
+
+            // Mettre à jour le texte du bouton filtre
+            const filterBtn = document.querySelector('[data-bs-toggle="dropdown"]');
+            if (rating === 'all') {
+                filterBtn.innerHTML = '<i class="fa fa-filter me-1"></i>Toutes les notes';
+            } else if (typeof rating === 'string' && rating.endsWith('+')) {
+                const ratingNum = rating.replace('+', '');
+                filterBtn.innerHTML = `<i class="fa fa-filter me-1"></i>${ratingNum}+ étoiles`;
+            } else {
+                filterBtn.innerHTML = `<i class="fa fa-filter me-1"></i>${rating} étoiles`;
+            }
+
+            filterTable();
+        }
+
+        function togglePhotosOnly() {
+            photosOnly = !photosOnly;
+            const btn = document.getElementById('photosFilterBtn');
+
+            if (photosOnly) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fa fa-camera me-1"></i>Avec photos ✓';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fa fa-camera me-1"></i>Avec photos';
+            }
+
+            filterTable();
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('reviewContent').value;
+
+            // Mettre à jour le compteur de caractères
+            const charCount = document.getElementById('charCount');
+            charCount.textContent = `${content.length}/500`;
+            if (content.length > 500) {
+                charCount.classList.add('text-danger');
+                document.getElementById('reviewContent').classList.add('is-invalid');
+            } else {
+                charCount.classList.remove('text-danger');
+                document.getElementById('reviewContent').classList.remove('is-invalid');
+            }
+        }
+
+        // Gestion du formulaire
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialiser les étoiles
+            const stars = document.querySelectorAll('.star-wrapper');
+            stars.forEach((star, index) => {
+                star.addEventListener('click', () => {
+                    setRatingStars(index + 1);
+                });
+
+                star.addEventListener('mouseenter', () => {
+                    const tempRating = index + 1;
+                    const starIcons = document.querySelectorAll('.star-wrapper .star-icon');
+
+                    starIcons.forEach((icon, iconIndex) => {
+                        if (iconIndex <= index) {
+                            icon.classList.remove('fa-star-o');
+                            icon.classList.add('fa-star');
+                        } else {
+                            icon.classList.remove('fa-star');
+                            icon.classList.add('fa-star-o');
+                        }
+                    });
+                });
+
+                star.addEventListener('mouseleave', () => {
+                    const currentRating = parseInt(document.getElementById('reviewRating').value);
+                    setRatingStars(currentRating);
+                });
+            });
+
+            // Mettre à jour la prévisualisation en temps réel
+            const contentInput = document.getElementById('reviewContent');
+            if (contentInput) {
+                contentInput.addEventListener('input', updatePreview);
+            }
+
+            // Gestion de la soumission du formulaire
+            const reviewForm = document.getElementById('reviewForm');
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', function(e) {
+                    const content = document.getElementById('reviewContent').value.trim();
+                    const rating = document.getElementById('reviewRating').value;
+
+                    if (content.length < 10) {
+                        e.preventDefault();
+                        alert('Le commentaire doit contenir au moins 10 caractères.');
+                        return;
+                    }
+
+                    if (content.length > 500) {
+                        e.preventDefault();
+                        alert('Le commentaire ne doit pas dépasser 500 caractères.');
+                        return;
+                    }
+
+                    if (!rating || rating < 1 || rating > 5) {
+                        e.preventDefault();
+                        alert('Veuillez sélectionner une note valide entre 1 et 5.');
+                        return;
+                    }
+
+                    const submitBtn = document.getElementById('modalSubmitBtn');
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Traitement...';
+                    submitBtn.disabled = true;
+                });
+            }
+
+            // Auto-dismiss des alertes après 5 secondes
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    setTimeout(() => bsAlert.close(), 5000);
+                });
+            }, 5000);
+
+            // Initialiser la prévisualisation
+            updatePreview();
+
+            // Initialiser les étoiles à 5
+            setRatingStars(5);
+        });
     </script>
 {% endblock %}

@@ -1,69 +1,732 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Toutes les photos des Reviews{% endblock %}
+{% block title %}Galerie des Photos d'Avis - Administration{% endblock %}
 
 {% block body %}
-    <h1>Toutes les photos des Reviews</h1>
-
-    <!-- Bouton Ajouter -->
-    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addPhotoModal">Ajouter une photo</button>
-
-    <div class="row">
-        {% for photo in photos %}
-            <div class="col-3 mb-3 text-center">
-                <img src="{{ asset('uploads/review_photos/' ~ photo.url) }}" class="img-fluid mb-1">
-                <div>
-                    <strong>Review ID:</strong> {{ photo.review.id }}<br>
-                    <strong>User:</strong> {{ photo.user.name }}
-                </div>
-                <a href="{{ path('review_photo_delete', {'id': photo.id}) }}" class="btn btn-sm btn-danger mt-1"
-                   onclick="return confirm('Voulez-vous supprimer cette photo ?')">Supprimer</a>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Photos des Avis</h1>
+                <p class="text-muted mb-0">Gestion des images partagées par les utilisateurs dans leurs avis</p>
             </div>
-        {% else %}
-            <p>Aucune photo disponible.</p>
-        {% endfor %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPhotoModal">
+                <i class="fa fa-plus-circle me-2"></i>Nouvelle photo
+            </button>
+        </div>
+
+
+
+        <!-- Filtres et recherche -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher par utilisateur, business, avis...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView()" id="viewToggle">
+                                <i class="fa fa-th-large me-1"></i>Grille
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vue grille -->
+        <div class="row" id="gridView">
+            {% for photo in photos %}
+                <div class="col-xl-3 col-lg-4 col-md-6 mb-4 photo-item"
+                     data-review-id="{{ photo.review.id }}"
+                     data-user-name="{{ photo.user.name|lower }}"
+                     data-business-name="{{ photo.review.business.name|lower }}">
+                    <div class="card border-0 shadow-sm h-100 photo-card">
+                        <div class="card-img-top position-relative overflow-hidden" style="height: 200px;">
+                            <img src="{{ asset('uploads/review_photos/' ~ photo.url) }}"
+                                 class="w-100 h-100 object-fit-cover"
+                                 alt="Photo de l'avis #{{ photo.review.id }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300/eee/ccc?text=Image+non+disponible'">
+                            <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-dark bg-opacity-75">
+                            <i class="fa fa-image me-1"></i>{{ photo.url|split('.')|last|upper }}
+                        </span>
+                            </div>
+                            <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-dark bg-opacity-50 text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>
+                                        <i class="fa fa-user me-1"></i>{{ photo.user.name }}
+                                    </small>
+                                    <small>
+                                        <i class="fa fa-star text-warning me-1"></i>{{ photo.review.rating }}/5
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="review-info">
+                                    <h6 class="card-title mb-1">Avis #{{ photo.review.id }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fa fa-store me-1"></i>{{ photo.review.business.name }}
+                                    </small>
+                                </div>
+
+                            </div>
+
+                            <p class="card-text small text-muted mb-3">
+                                {{ photo.review.comment|slice(0, 80) }}{% if photo.review.comment|length > 80 %}...{% endif %}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="rating-display">
+                                    {% for i in 1..5 %}
+                                        {% if i <= photo.review.rating %}
+                                            <i class="fa fa-star text-warning" style="font-size: 12px;"></i>
+                                        {% else %}
+                                            <i class="fa fa-star-o text-warning" style="font-size: 12px;"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <div class="btn-group btn-group-sm">
+
+                                    <button type="button" class="btn btn-outline-primary"
+                                            onclick="editPhoto({{ photo.id }}, {{ photo.review.id }}, {{ photo.user.id }})"
+                                            title="Modifier">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <a href="{{ path('review_photo_delete', {'id': photo.id}) }}"
+                                       class="btn btn-outline-danger"
+                                       onclick="return confirmDeletePhoto('{{ photo.user.name|e('js') }}', '{{ photo.review.business.name|e('js') }}')"
+                                       title="Supprimer">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                            <i class="fa fa-camera fa-2x text-muted"></i>
+                        </div>
+                        <h5 class="mb-2">Aucune photo d'avis disponible</h5>
+                        <p class="text-muted mb-3">Les utilisateurs n'ont pas encore partagé de photos avec leurs avis</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPhotoModal">
+                            <i class="fa fa-plus-circle me-2"></i>Ajouter une photo
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Vue tableau (cachée par défaut) -->
+        <div class="card border-0 shadow-sm rounded-3 d-none" id="tableView">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Photo</th>
+                            <th>Avis</th>
+                            <th>Utilisateur</th>
+                            <th>Business</th>
+                            <th>Note</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for photo in photos %}
+                            <tr class="photo-row" data-review-id="{{ photo.review.id }}">
+                                <td class="ps-4">
+                                    <div class="avatar-table">
+                                        <img src="{{ asset('uploads/review_photos/' ~ photo.url) }}"
+                                             class="rounded" width="60" height="60"
+                                             alt="Photo de {{ photo.user.name }}"
+                                             onerror="this.src='https://via.placeholder.com/60x60/eee/ccc?text=Image'">
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>Avis #{{ photo.review.id }}</strong><br>
+                                    <small class="text-muted">{{ photo.review.comment|slice(0, 30) }}...</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            {% if photo.user.photo %}
+                                                <img src="{{ asset('uploads/' ~ photo.user.photo) }}"
+                                                     class="rounded-circle" width="30" height="30"
+                                                     alt="{{ photo.user.name }}">
+                                            {% else %}
+                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center"
+                                                     style="width: 30px; height: 30px; background-color: #e9ecef; color: #6c757d;">
+                                                    {{ photo.user.name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ photo.user.name }}</strong><br>
+                                            <small class="text-muted">{{ photo.user.email|slice(0, 15) }}...</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ photo.review.business.name }}</strong><br>
+                                    <small class="text-muted">{{ photo.review.business.category.name }}</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            {% for i in 1..5 %}
+                                                {% if i <= photo.review.rating %}
+                                                    <i class="fa fa-star text-warning" style="font-size: 12px;"></i>
+                                                {% else %}
+                                                    <i class="fa fa-star-o text-warning" style="font-size: 12px;"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning">
+                                        {{ photo.review.rating }}/5
+                                    </span>
+                                    </div>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm">
+
+                                        <button type="button" class="btn btn-outline-primary"
+                                                onclick="editPhoto({{ photo.id }}, {{ photo.review.id }}, {{ photo.user.id }})">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+                                        <a href="{{ path('review_photo_delete', {'id': photo.id}) }}"
+                                           class="btn btn-outline-danger"
+                                           onclick="return confirmDeletePhoto('{{ photo.user.name|e('js') }}', '{{ photo.review.business.name|e('js') }}')">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if photos|length > 0 %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+            <span class="text-muted">
+                Affichage de 1 à {{ photos|length }} sur {{ photos|length }} photos
+            </span>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
     </div>
 
     <!-- Modal Ajout -->
     <div class="modal fade" id="addPhotoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form method="POST" enctype="multipart/form-data">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Ajouter une photo</h5>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="POST" enctype="multipart/form-data" id="photoForm">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">
+                            <i class="fa fa-camera me-2"></i>Ajouter une photo d'avis
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="review" class="form-label">Review</label>
-                            <select class="form-select" id="review" name="review" required>
-                                <option value="">-- Choisir une review --</option>
-                                {% for review in reviews %}
-                                    <option value="{{ review.id }}">ID {{ review.id }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="user" class="form-label">User</label>
-                            <select class="form-select" id="user" name="user" required>
-                                <option value="">-- Choisir un utilisateur --</option>
-                                {% for user in users %}
-                                    <option value="{{ user.id }}">{{ user.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="photo" class="form-label">Photo</label>
-                            <input type="file" class="form-control" id="photo" name="photo" required>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="review" class="form-label fw-semibold">Avis *</label>
+                                <select class="form-control select2-style" id="review" name="review" required>
+                                    <option value="">Sélectionner un avis</option>
+                                    {% for review in reviews %}
+                                        <option value="{{ review.id }}">
+                                            Avis #{{ review.id }} - {{ review.user.name }} pour {{ review.business.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text text-muted">
+                                    Sélectionnez l'avis associé à cette photo
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="user" class="form-label fw-semibold">Utilisateur *</label>
+                                <select class="form-control select2-style" id="user" name="user" required>
+                                    <option value="">Sélectionner un utilisateur</option>
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="photo" class="form-label fw-semibold">Photo *</label>
+                                <div class="file-upload-area border rounded p-4 text-center">
+                                    <div class="mb-3">
+                                        <i class="fa fa-cloud-upload fa-3x text-muted"></i>
+                                    </div>
+                                    <input type="file" class="form-control d-none" id="photo" name="photo"
+                                           accept="image/*" required onchange="previewUploadedPhoto(event)">
+                                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('photo').click()">
+                                        <i class="fa fa-folder-open me-2"></i>Choisir un fichier
+                                    </button>
+                                    <div class="form-text mt-2">
+                                        Formats acceptés: JPG, PNG, GIF (max 5MB)
+                                    </div>
+                                    <div id="uploadPreview" class="mt-3 d-none">
+                                        <img id="uploadedPreview" class="img-thumbnail" style="max-height: 150px;">
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearUploadPreview()">
+                                            <i class="fa fa-times me-1"></i>Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border mt-3">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-3 text-muted">Informations de l'avis sélectionné</h6>
+                                        <div id="reviewInfo" class="d-none">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block">Business:</small>
+                                                    <strong id="selectedBusiness">-</strong>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block">Note:</small>
+                                                    <div id="selectedRating">-</div>
+                                                </div>
+                                                <div class="col-12 mt-2">
+                                                    <small class="text-muted d-block">Commentaire:</small>
+                                                    <p class="mb-0 small" id="selectedComment">-</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="noReviewInfo" class="text-center text-muted">
+                                            <i class="fa fa-info-circle me-2"></i>Sélectionnez un avis pour voir les détails
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success">Ajouter</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save me-2"></i>Ajouter la photo
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Modal de prévisualisation -->
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="previewTitle">Prévisualisation de l'image</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0 text-center">
+                    <img id="previewImage" src="" class="img-fluid" alt="Prévisualisation">
+                </div>
+                <div class="modal-footer bg-dark text-white">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-2"></i>Fermer
+                    </button>
+                    <a href="#" class="btn btn-primary" id="downloadBtn">
+                        <i class="fa fa-download me-2"></i>Télécharger
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de modification -->
+    <div class="modal fade" id="editPhotoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="POST" action="{{ path('review_photo_edit') }}" enctype="multipart/form-data" id="editPhotoForm">                    <input type="hidden" id="editPhotoId" name="id">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">
+                            <i class="fa fa-edit me-2"></i>Modifier la photo
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label for="editReview" class="form-label fw-semibold">Avis</label>
+                            <select class="form-control" id="editReview" name="review" required>
+                                <option value="">Sélectionner un avis</option>
+                                {% for review in reviews %}
+                                    <option value="{{ review.id }}">
+                                        Avis #{{ review.id }} - {{ review.user.name }} pour {{ review.business.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editUser" class="form-label fw-semibold">Utilisateur</label>
+                            <select class="form-control" id="editUser" name="user" required>
+                                <option value="">Sélectionner un utilisateur</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.name }} ({{ user.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPhoto" class="form-label fw-semibold">Nouvelle photo (optionnel)</label>
+                            <input type="file" class="form-control" id="editPhoto" name="photo" accept="image/*">
+                            <div class="form-text">
+                                Laissez vide pour conserver la photo actuelle
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .photo-card {
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1) !important;
+            border-color: #007bff;
+        }
+
+        .object-fit-cover {
+            object-fit: cover;
+        }
+
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-table {
+            width: 60px;
+            height: 60px;
+            overflow: hidden;
+            border-radius: 6px;
+        }
+
+        .avatar-table img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-sm {
+            width: 30px;
+            height: 30px;
+        }
+
+        .avatar-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.bg-dark {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .select2-style {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            background-size: 16px 12px;
+        }
+
+        /* Animation pour les cartes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .photo-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Modal prévisualisation */
+        #previewModal .modal-dialog {
+            max-width: 90%;
+        }
+
+        #previewModal .modal-body {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+
+        #previewImage {
+            max-height: 70vh;
+            max-width: 100%;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .photo-card .card-img-top {
+                height: 150px;
+            }
+
+            .btn-group-sm > .btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        let currentView = 'grid';
+        let selectedReview = 'all';
+
+        function toggleView() {
+            const gridView = document.getElementById('gridView');
+            const tableView = document.getElementById('tableView');
+            const viewToggle = document.getElementById('viewToggle');
+
+            if (currentView === 'grid') {
+                gridView.classList.add('d-none');
+                tableView.classList.remove('d-none');
+                viewToggle.innerHTML = '<i class="fa fa-list me-1"></i>Tableau';
+                currentView = 'table';
+            } else {
+                gridView.classList.remove('d-none');
+                tableView.classList.add('d-none');
+                viewToggle.innerHTML = '<i class="fa fa-th-large me-1"></i>Grille';
+                currentView = 'grid';
+            }
+        }
+
+        function filterByReview(reviewId) {
+            selectedReview = reviewId;
+            const photoItems = document.querySelectorAll('.photo-item, .photo-row');
+
+            photoItems.forEach(item => {
+                if (reviewId === 'all' || item.dataset.reviewId == reviewId) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function previewPhoto(imageUrl, userName, businessName) {
+            document.getElementById('previewImage').src = imageUrl;
+            document.getElementById('previewTitle').textContent = `Photo de ${userName} pour ${businessName}`;
+            document.getElementById('downloadBtn').href = imageUrl;
+            document.getElementById('downloadBtn').download = imageUrl.split('/').pop();
+
+            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            previewModal.show();
+        }
+
+        function editPhoto(photoId, reviewId, userId) {
+            document.getElementById('editPhotoId').value = photoId;
+            document.getElementById('editReview').value = reviewId;
+            document.getElementById('editUser').value = userId;
+
+            const editModal = new bootstrap.Modal(document.getElementById('editPhotoModal'));
+            editModal.show();
+        }
+
+        function confirmDeletePhoto(userName, businessName) {
+            return confirm(`Êtes-vous sûr de vouloir supprimer la photo de ${userName} pour ${businessName} ?\n\nCette action est irréversible.`);
+        }
+
+        function previewUploadedPhoto(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('uploadPreview');
+            const img = document.getElementById('uploadedPreview');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    preview.classList.remove('d-none');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearUploadPreview() {
+            document.getElementById('photo').value = '';
+            document.getElementById('uploadPreview').classList.add('d-none');
+            document.getElementById('uploadedPreview').src = '';
+        }
+
+        // Gestion du formulaire d'ajout
+        document.addEventListener('DOMContentLoaded', function() {
+            // Recherche en temps réel
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const photoItems = document.querySelectorAll('.photo-item');
+
+                    photoItems.forEach(item => {
+                        const userName = item.dataset.userName.toLowerCase();
+                        const businessName = item.dataset.businessName.toLowerCase();
+                        const text = item.textContent.toLowerCase();
+
+                        const shouldShow = (selectedReview === 'all' || item.dataset.reviewId == selectedReview) &&
+                            (userName.includes(searchTerm) || businessName.includes(searchTerm) || text.includes(searchTerm));
+
+                        item.style.display = shouldShow ? '' : 'none';
+                    });
+                });
+            }
+
+            // Mettre à jour les infos de l'avis sélectionné
+            const reviewSelect = document.getElementById('review');
+            if (reviewSelect) {
+                reviewSelect.addEventListener('change', function() {
+                    const reviewInfo = document.getElementById('reviewInfo');
+                    const noReviewInfo = document.getElementById('noReviewInfo');
+
+                    if (this.value) {
+                        reviewInfo.classList.remove('d-none');
+                        noReviewInfo.classList.add('d-none');
+                        // Ici, vous pourriez faire un appel AJAX pour récupérer les détails de l'avis
+                        // Pour l'instant, on affiche des infos basiques
+                        const selectedOption = this.options[this.selectedIndex];
+                        const text = selectedOption.text.split(' - ');
+                        if (text.length > 1) {
+                            document.getElementById('selectedBusiness').textContent = text[1].split(' pour ')[1] || '-';
+                        }
+                    } else {
+                        reviewInfo.classList.add('d-none');
+                        noReviewInfo.classList.remove('d-none');
+                    }
+                });
+            }
+
+            // Validation du formulaire
+            const photoForm = document.getElementById('photoForm');
+            if (photoForm) {
+                photoForm.addEventListener('submit', function(e) {
+                    const fileInput = document.getElementById('photo');
+                    if (fileInput.files.length === 0) {
+                        e.preventDefault();
+                        alert('Veuillez sélectionner une photo.');
+                        return;
+                    }
+
+                    const file = fileInput.files[0];
+                    if (file.size > 5 * 1024 * 1024) { // 5MB
+                        e.preventDefault();
+                        alert('La photo ne doit pas dépasser 5MB.');
+                        return;
+                    }
+
+                    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+                        e.preventDefault();
+                        alert('Format de fichier non supporté. Utilisez JPG, PNG ou GIF.');
+                        return;
+                    }
+                });
+            }
+
+            // Animation des cartes
+            const cards = document.querySelectorAll('.photo-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.05}s`;
+            });
+
+            // Initialiser le filtre
+            filterByReview('all');
+        });
+    </script>
 {% endblock %}

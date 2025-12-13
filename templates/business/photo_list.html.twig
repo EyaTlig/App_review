@@ -1,34 +1,435 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Toutes les photos{% endblock %}
+{% block title %}Galerie des Photos - Administration{% endblock %}
 
 {% block body %}
-    <h1>Toutes les photos</h1>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Galerie des Photos</h1>
+                <p class="text-muted mb-0">Gestion centralisée de toutes les images de la plateforme</p>
+            </div>
+            <div class="d-flex gap-2">
 
-    <!-- Bouton global pour ajouter une nouvelle photo -->
-    <a href="{{ path('business_photo_add_global') }}" class="btn btn-primary mb-3">Ajouter une photo</a>
+                <a href="{{ path('business_photo_add_global') }}" class="btn btn-primary">
+                    <i class="fa fa-plus-circle me-2"></i>Nouvelle photo
+                </a>
+            </div>
+        </div>
 
-    <div class="row">
-        {% for photo in photos %}
-            <div class="col-3 mb-3 text-center">
-                <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}" class="img-fluid mb-1">
-                <div>
-                    <strong>Business :</strong> {{ photo.business.name }}
-                </div>
-
-                <!-- Boutons CRUD -->
-                <div class="d-flex justify-content-center gap-1 mt-1">
-                    <a href="{{ path('business_photo_edit', {'id': photo.id}) }}" class="btn btn-sm btn-warning">
-                        Modifier
-                    </a>
-                    <a href="{{ path('business_photo_delete', {'id': photo.id}) }}" class="btn btn-sm btn-danger"
-                       onclick="return confirm('Voulez-vous supprimer cette photo ?')">
-                        Supprimer
-                    </a>
+        <!-- Statistiques -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <p class="text-muted mb-1">Total photos</p>
+                                <h2 class="mb-0 fw-bold">{{ photos|length }}</h2>
+                            </div>
+                            <div class="icon-wrapper bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-picture-o text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        {% else %}
-            <p>Aucune photo disponible.</p>
-        {% endfor %}
+
+
+
+
+        <!-- Filtres et recherche -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher une photo, un business...">
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                <i class="fa fa-filter me-1"></i>Filtrer par business
+                            </button>
+
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleView()" id="viewToggle">
+                                <i class="fa fa-th-large me-1"></i>Grille
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vue grille -->
+        <div class="row" id="gridView">
+            {% for photo in photos %}
+                <div class="col-xl-3 col-lg-4 col-md-6 mb-4 photo-item" data-business-id="{{ photo.business.id }}" data-business-name="{{ photo.business.name|lower }}">
+                    <div class="card border-0 shadow-sm h-100 photo-card">
+                        <div class="card-img-top position-relative overflow-hidden" style="height: 200px;">
+                            <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
+                                 class="w-100 h-100 object-fit-cover"
+                                 alt="Photo de {{ photo.business.name }}"
+                                 onerror="this.src='https://via.placeholder.com/400x300/eee/ccc?text=Image+non+disponible'">
+                            <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-dark bg-opacity-75">
+                            <i class="fa fa-image me-1"></i>{{ photo.filename|split('.')|last|upper }}
+                        </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="business-info">
+                                    <h6 class="card-title mb-1">{{ photo.business.name }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fa fa-tag me-1"></i>{{ photo.business.category.name }}
+                                    </small>
+                                </div>
+
+                            </div>
+
+
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                <i class="fa fa-id-badge me-1"></i>ID: {{ photo.id }}
+                            </span>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ path('business_photo_edit', {'id': photo.id}) }}"
+                                       class="btn btn-outline-primary" title="Modifier">
+                                        <i class="fa fa-edit"></i>
+                                    </a>
+                                    <a href="{{ path('business_photo_delete', {'id': photo.id}) }}"
+                                       class="btn btn-outline-danger"
+                                       onclick="return confirmDeletePhoto('{{ photo.business.name|e('js') }}')"
+                                       title="Supprimer">
+                                        <i class="fa fa-trash"></i>
+                                    </a>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                            <i class="fa fa-picture-o fa-2x text-muted"></i>
+                        </div>
+                        <h5 class="mb-2">Aucune photo disponible</h5>
+                        <p class="text-muted mb-3">Commencez par ajouter votre première photo</p>
+                        <a href="{{ path('business_photo_add_global') }}" class="btn btn-primary">
+                            <i class="fa fa-plus-circle me-2"></i>Ajouter une photo
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Vue tableau (cachée par défaut) -->
+        <div class="card border-0 shadow-sm rounded-3 d-none" id="tableView">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Photo</th>
+                            <th>Business</th>
+                            <th>Catégorie</th>
+                            <th>Nom du fichier</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for photo in photos %}
+                            <tr class="photo-row" data-business-id="{{ photo.business.id }}">
+                                <td class="ps-4">
+                                    <div class="avatar-table">
+                                        <img src="{{ asset('uploads/business_photos/' ~ photo.filename) }}"
+                                             class="rounded" width="60" height="60"
+                                             alt="Photo de {{ photo.business.name }}"
+                                             onerror="this.src='https://via.placeholder.com/60x60/eee/ccc?text=Image'">
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ photo.business.name }}</strong><br>
+                                    <small class="text-muted">{{ photo.business.address|slice(0, 30) }}...</small>
+                                </td>
+                                <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                    {{ photo.business.category.name }}
+                                </span>
+                                </td>
+                                <td>
+                                    <code class="bg-light px-2 py-1 rounded">{{ photo.filename }}</code><br>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm">
+
+                                        <a href="{{ path('business_photo_edit', {'id': photo.id}) }}"
+                                           class="btn btn-outline-primary">
+                                            <i class="fa fa-edit"></i>
+                                        </a>
+                                        <a href="{{ path('business_photo_delete', {'id': photo.id}) }}"
+                                           class="btn btn-outline-danger"
+                                           onclick="return confirmDeletePhoto('{{ photo.business.name|e('js') }}')">
+                                            <i class="fa fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if photos|length > 0 %}
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+            <span class="text-muted">
+                Affichage de 1 à {{ photos|length }} sur {{ photos|length }} photos
+            </span>
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">
+                                <i class="fa fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">
+                                <i class="fa fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
     </div>
+
+
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .photo-card {
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1) !important;
+            border-color: #007bff;
+        }
+
+        .object-fit-cover {
+            object-fit: cover;
+        }
+
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-table {
+            width: 60px;
+            height: 60px;
+            overflow: hidden;
+            border-radius: 6px;
+        }
+
+        .avatar-table img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.bg-dark {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Animation pour les cartes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .photo-card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .photo-card .card-img-top {
+                height: 150px;
+            }
+
+            .btn-group-sm > .btn {
+                padding: 0.2rem 0.4rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Modal prévisualisation */
+        #previewModal .modal-dialog {
+            max-width: 90%;
+        }
+
+        #previewModal .modal-body {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+
+        #previewImage {
+            max-height: 70vh;
+            max-width: 100%;
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        let currentView = 'grid';
+        let selectedBusiness = 'all';
+
+        function toggleView() {
+            const gridView = document.getElementById('gridView');
+            const tableView = document.getElementById('tableView');
+            const viewToggle = document.getElementById('viewToggle');
+
+            if (currentView === 'grid') {
+                gridView.classList.add('d-none');
+                tableView.classList.remove('d-none');
+                viewToggle.innerHTML = '<i class="fa fa-list me-1"></i>Tableau';
+                currentView = 'table';
+            } else {
+                gridView.classList.remove('d-none');
+                tableView.classList.add('d-none');
+                viewToggle.innerHTML = '<i class="fa fa-th-large me-1"></i>Grille';
+                currentView = 'grid';
+            }
+        }
+
+        function filterByBusiness(businessId) {
+            selectedBusiness = businessId;
+            const photoItems = document.querySelectorAll('.photo-item, .photo-row');
+
+            photoItems.forEach(item => {
+                if (businessId === 'all' || item.dataset.businessId == businessId) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Mettre à jour le dropdown
+            const dropdown = document.querySelector('.dropdown-toggle');
+            if (businessId === 'all') {
+                dropdown.innerHTML = '<i class="fa fa-filter me-1"></i>Tous les businesses';
+            } else {
+                const businessName = document.querySelector(`[data-business-id="${businessId}"]`).dataset.businessName;
+                dropdown.innerHTML = `<i class="fa fa-filter me-1"></i>${businessName}`;
+            }
+        }
+
+        function previewPhoto(imageUrl) {
+            document.getElementById('previewImage').src = imageUrl;
+            document.getElementById('downloadBtn').href = imageUrl;
+            document.getElementById('downloadBtn').download = imageUrl.split('/').pop();
+
+            const previewModal = new bootstrap.Modal(document.getElementById('previewModal'));
+            previewModal.show();
+        }
+
+        function confirmDeletePhoto(businessName) {
+            return confirm(`Êtes-vous sûr de vouloir supprimer cette photo de "${businessName}" ?\n\nCette action est irréversible.`);
+        }
+
+        // Recherche en temps réel
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const photoItems = document.querySelectorAll('.photo-item');
+
+                    photoItems.forEach(item => {
+                        const businessName = item.dataset.businessName.toLowerCase();
+                        const text = item.textContent.toLowerCase();
+
+                        const shouldShow = (selectedBusiness === 'all' || item.dataset.businessId == selectedBusiness) &&
+                            (businessName.includes(searchTerm) || text.includes(searchTerm));
+
+                        item.style.display = shouldShow ? '' : 'none';
+                    });
+
+                    // Mettre à jour la vue tableau si active
+                    if (currentView === 'table') {
+                        const photoRows = document.querySelectorAll('.photo-row');
+                        photoRows.forEach(row => {
+                            const rowText = row.textContent.toLowerCase();
+                            row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+                        });
+                    }
+                });
+            }
+
+            // Initialiser avec animation
+            const cards = document.querySelectorAll('.photo-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.05}s`;
+            });
+
+            // Gérer le filtrage initial
+            filterByBusiness('all');
+        });
+    </script>
 {% endblock %}

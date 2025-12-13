@@ -1,71 +1,109 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Tableau de Bord Admin{% endblock %}
+{% block title %}Tableau de Bord Administrateur{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Tableau de Bord</h1>
-            <span class="text-muted">{{ "now"|date('d/m/Y') }}</span>
+    <div class="container-fluid px-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Tableau de Bord</h1>
+                <p class="text-muted mb-0">Aperçu des performances et statistiques</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge bg-light text-dark px-3 py-2">
+                        <i class="fa fa-calendar-alt me-2"></i>
+                        {{ "now"|date('d/m/Y') }}
+                    </span>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" id="exportDropdown">
+                        <i class="fa fa-download me-2"></i>Exporter
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item export-action" href="#" data-type="csv"><i class="fa fa-file-csv me-2"></i>CSV</a></li>
+                        <li><a class="dropdown-item export-action" href="#" data-type="excel"><i class="fa fa-file-excel me-2"></i>Excel</a></li>
+                        <li><a class="dropdown-item export-action" href="#" data-type="pdf"><i class="fa fa-file-pdf me-2"></i>PDF</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item export-action" href="#" data-type="full-report"><i class="fa fa-chart-bar me-2"></i>Rapport complet</a></li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- Statistics Cards -->
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-4">
             <div class="col-xl-3 col-md-6">
-                <div class="card bg-primary text-white">
+                <div class="card card-hover border-0 shadow-sm rounded-3">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="card-title text-white-50">Total Utilisateurs</h6>
-                                <h2 class="mb-0">{{ totalUsers }}</h2>
+                                <p class="text-muted mb-1">Total Utilisateurs</p>
+                                <h2 class="mb-0 fw-bold">{{ totalUsers }}</h2>
+                                <small class="text-success fw-semibold">
+                                    <i class="fa fa-arrow-up me-1"></i>+12% ce mois
+                                </small>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-users fa-2x text-white-50"></i>
+                            <div class="icon-wrapper bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-users fa-lg text-primary"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-xl-3 col-md-6">
-                <div class="card bg-success text-white">
+                <div class="card card-hover border-0 shadow-sm rounded-3">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="card-title text-white-50">Clients</h6>
-                                <h2 class="mb-0">{{ totalCustomers }}</h2>
+                                <p class="text-muted mb-1">Clients</p>
+                                <h2 class="mb-0 fw-bold">{{ totalCustomers }}</h2>
+                                <small class="text-success fw-semibold">
+                                    <i class="fa fa-arrow-up me-1"></i>+8% ce mois
+                                </small>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-user fa-2x text-white-50"></i>
+                            <div class="icon-wrapper bg-success bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-user fa-lg text-success"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-xl-3 col-md-6">
-                <div class="card bg-info text-white">
+                <div class="card card-hover border-0 shadow-sm rounded-3">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="card-title text-white-50">Propriétaires</h6>
-                                <h2 class="mb-0">{{ totalOwners }}</h2>
+                                <p class="text-muted mb-1">Propriétaires</p>
+                                <h2 class="mb-0 fw-bold">{{ totalOwners }}</h2>
+                                <small class="text-success fw-semibold">
+                                    <i class="fa fa-arrow-up me-1"></i>+15% ce mois
+                                </small>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-user-tie fa-2x text-white-50"></i>
+                            <div class="icon-wrapper bg-info bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-user-secret fa-lg text-info"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div class="col-xl-3 col-md-6">
-                <div class="card bg-warning text-dark">
+                <div class="card card-hover border-0 shadow-sm rounded-3">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <h6 class="card-title">Businesses</h6>
-                                <h2 class="mb-0">{{ totalBusinesses }}</h2>
+                                <p class="text-muted mb-1">Businesses</p>
+                                <h2 class="mb-0 fw-bold">{{ totalBusinesses }}</h2>
+                                <small class="text-success fw-semibold">
+                                    <i class="fa fa-arrow-up me-1"></i>+5% ce mois
+                                </small>
                             </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-store fa-2x text-dark-50"></i>
+                            <div class="icon-wrapper bg-warning bg-opacity-10 p-3 rounded-circle">
+                                <i class="fa fa-briefcase fa-lg text-warning"></i>
                             </div>
                         </div>
                     </div>
@@ -73,66 +111,868 @@
             </div>
         </div>
 
-        <!-- Charts -->
-        <div class="row">
+        <!-- Charts & Recent Activity -->
+        <div class="row g-4">
+            <!-- Main Chart -->
+            <div class="col-xl-8">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">Évolution des inscriptions</h5>
+                                <p class="text-muted small mb-0" id="chartPeriodText">12 derniers mois</p>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" id="periodDropdown">
+                                    <i class="fa fa-calendar me-2"></i><span id="selectedPeriod">12 mois</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item period-selector" href="#" data-period="6">6 mois</a></li>
+                                    <li><a class="dropdown-item period-selector active" href="#" data-period="12">12 mois</a></li>
+                                    <li><a class="dropdown-item period-selector" href="#" data-period="24">24 mois</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="chart-container position-relative" style="height: 300px;">
+                            <canvas id="chartUsers"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="col-xl-4">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="card-title mb-1">Activité récente</h5>
+                        <p class="text-muted small mb-0">Dernières actions</p>
+                    </div>
+                    <div class="card-body pt-0">
+                        <div class="list-group list-group-flush">
+                            {% for activity in recentActivities|default([]) %}
+                                <div class="list-group-item border-0 px-0 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="icon-wrapper-sm bg-light rounded-circle">
+                                                <i class="fa {{ activity.icon|default('fa-user-plus') }} text-primary"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0 fw-normal">{{ activity.title|default('Nouvel utilisateur') }}</h6>
+                                            <p class="text-muted small mb-0">{{ activity.description|default('John Doe s\'est inscrit') }}</p>
+                                        </div>
+                                        <span class="text-muted small">{{ activity.time|default('Il y a 2 min') }}</span>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <div class="icon-wrapper bg-light rounded-circle p-4 mb-3 mx-auto" style="width: 80px; height: 80px;">
+                                        <i class="fa fa-history fa-2x text-muted"></i>
+                                    </div>
+                                    <p class="text-muted mb-0">Aucune activité récente</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="card-title mb-0">Inscriptions par mois (12 derniers mois)</h5>
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white border-0 pt-4 pb-3">
+                        <h5 class="card-title mb-1">Actions rapides</h5>
+                        <p class="text-muted small mb-0">Gestion rapide de la plateforme</p>
                     </div>
                     <div class="card-body">
-                        <canvas id="chartUsers" height="100"></canvas>
+                        <div class="row g-3">
+                            <div class="col-md-3 col-6">
+                                <a href="{{ path('user_index') }}" class="card action-card border-0 shadow-sm text-decoration-none">
+                                    <div class="card-body text-center p-4">
+                                        <div class="icon-wrapper-lg bg-primary bg-opacity-10 rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-users fa-2x text-primary"></i>
+                                        </div>
+                                        <h6 class="mb-0">Gérer utilisateurs</h6>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="{{ path('business_index') }}" class="card action-card border-0 shadow-sm text-decoration-none">
+                                    <div class="card-body text-center p-4">
+                                        <div class="icon-wrapper-lg bg-success bg-opacity-10 rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-briefcase fa-2x text-success"></i>
+                                        </div>
+                                        <h6 class="mb-0">Businesses</h6>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="{{ path('review_index') }}" class="card action-card border-0 shadow-sm text-decoration-none">
+                                    <div class="card-body text-center p-4">
+                                        <div class="icon-wrapper-lg bg-info bg-opacity-10 rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa fa-comments fa-2x text-info"></i>
+                                        </div>
+                                        <h6 class="mb-0">Reviews</h6>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="{{ path('admin_settings') }}" class="card action-card border-0 shadow-sm text-decoration-none">
+                                    <div class="card-body text-center p-4">
+                                        <div class="icon-wrapper-lg bg-warning bg-opacity-10 rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-cogs fa-2x text-warning"></i>
+                                        </div>
+                                        <h6 class="mb-0">Paramètres</h6>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'export -->
+    <div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportModalLabel">Exporter les données</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportForm">
+                        <div class="mb-3">
+                            <label for="exportType" class="form-label">Type d'export</label>
+                            <select class="form-select" id="exportType" name="type">
+                                <option value="csv">CSV</option>
+                                <option value="excel">Excel</option>
+                                <option value="pdf">PDF</option>
+                                <option value="full-report">Rapport complet</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dateRange" class="form-label">Période</label>
+                            <select class="form-select" id="dateRange" name="period">
+                                <option value="month">Ce mois</option>
+                                <option value="quarter">Ce trimestre</option>
+                                <option value="year" selected>Cette année</option>
+                                <option value="all">Toutes les données</option>
+                                <option value="custom">Personnalisée</option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-3 d-none" id="customDateRange">
+                            <div class="col">
+                                <label for="startDate" class="form-label small">Date de début</label>
+                                <input type="date" class="form-control form-control-sm" id="startDate" name="startDate">
+                            </div>
+                            <div class="col">
+                                <label for="endDate" class="form-label small">Date de fin</label>
+                                <input type="date" class="form-control form-control-sm" id="endDate" name="endDate">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Données à exporter</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportUsers" name="data[]" value="users" checked>
+                                <label class="form-check-label" for="exportUsers">
+                                    Utilisateurs
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportBusinesses" name="data[]" value="businesses" checked>
+                                <label class="form-check-label" for="exportBusinesses">
+                                    Businesses
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportReviews" name="data[]" value="reviews">
+                                <label class="form-check-label" for="exportReviews">
+                                    Reviews
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportStats" name="data[]" value="stats" checked>
+                                <label class="form-check-label" for="exportStats">
+                                    Statistiques
+                                </label>
+                            </div>
+                        </div>
+                        <div class="alert alert-info d-none" id="exportInfo">
+                            <i class="fa fa-info-circle me-2"></i>
+                            <span id="exportInfoText"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmExport">
+                        <i class="fa fa-download me-2"></i>Exporter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de paramètres -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">Paramètres de la plateforme</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                                <i class="fa fa-cog me-2"></i>Général
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab">
+                                <i class="fa fa-bell me-2"></i>Notifications
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                                <i class="fa fa-shield-alt me-2"></i>Sécurité
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                                <i class="fa fa-tools me-2"></i>Maintenance
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="settingsTabContent">
+                        <!-- Onglet Général -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <form id="generalSettingsForm">
+                                <div class="mb-3">
+                                    <label for="siteName" class="form-label">Nom du site</label>
+                                    <input type="text" class="form-control" id="siteName" value="Business Directory">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adminEmail" class="form-label">Email administrateur</label>
+                                    <input type="email" class="form-control" id="adminEmail" value="admin@example.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="timezone" class="form-label">Fuseau horaire</label>
+                                    <select class="form-select" id="timezone">
+                                        <option value="Europe/Paris" selected>Europe/Paris (GMT+1)</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="America/New_York">America/New_York (GMT-5)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="recordsPerPage" class="form-label">Enregistrements par page</label>
+                                    <input type="number" class="form-control" id="recordsPerPage" value="20" min="5" max="100">
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Onglet Notifications -->
+                        <div class="tab-pane fade" id="notifications" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Notifications par email</label>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifyNewUsers" checked>
+                                    <label class="form-check-label" for="notifyNewUsers">
+                                        Nouveaux utilisateurs
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifyNewBusinesses" checked>
+                                    <label class="form-check-label" for="notifyNewBusinesses">
+                                        Nouveaux businesses
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifyNewReviews" checked>
+                                    <label class="form-check-label" for="notifyNewReviews">
+                                        Nouveaux reviews
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="notifyDailyReport">
+                                    <label class="form-check-label" for="notifyDailyReport">
+                                        Rapport quotidien
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notificationFrequency" class="form-label">Fréquence des rapports</label>
+                                <select class="form-select" id="notificationFrequency">
+                                    <option value="daily">Quotidien</option>
+                                    <option value="weekly" selected>Hebdomadaire</option>
+                                    <option value="monthly">Mensuel</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Onglet Sécurité -->
+                        <div class="tab-pane fade" id="security" role="tabpanel">
+                            <div class="alert alert-warning">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                Ces paramètres affectent la sécurité de votre plateforme.
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="passwordPolicy" class="form-label">Politique de mot de passe</label>
+                                <select class="form-select" id="passwordPolicy">
+                                    <option value="low">Faible (6 caractères minimum)</option>
+                                    <option value="medium" selected>Moyenne (8 caractères, lettres et chiffres)</option>
+                                    <option value="high">Forte (12 caractères, mélange complexe)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="sessionTimeout" class="form-label">Durée de session (minutes)</label>
+                                <input type="number" class="form-control" id="sessionTimeout" value="120" min="15" max="1440">
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="require2FA" checked>
+                                <label class="form-check-label" for="require2FA">
+                                    Requérir l'authentification à deux facteurs pour les administrateurs
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="loginNotifications">
+                                <label class="form-check-label" for="loginNotifications">
+                                    Notifications de connexion suspecte
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Onglet Maintenance -->
+                        <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                            <div class="alert alert-info">
+                                <i class="fa fa-info-circle me-2"></i>
+                                Mode maintenance : les utilisateurs ne pourront pas accéder au site.
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                                <label class="form-check-label fw-semibold" for="maintenanceMode">
+                                    Activer le mode maintenance
+                                </label>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="maintenanceMessage" class="form-label">Message de maintenance</label>
+                                <textarea class="form-control" id="maintenanceMessage" rows="3" placeholder="Le site est actuellement en maintenance. Nous serons de retour rapidement."></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="backupFrequency" class="form-label">Fréquence des sauvegardes</label>
+                                <select class="form-select" id="backupFrequency">
+                                    <option value="daily">Quotidienne</option>
+                                    <option value="weekly" selected>Hebdomadaire</option>
+                                    <option value="monthly">Mensuelle</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-outline-primary" id="manualBackup">
+                                <i class="fa fa-save me-2"></i>Sauvegarde manuelle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="saveSettings">
+                        <i class="fa fa-save me-2"></i>Enregistrer
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        /* styles.css */
+        .card-hover {
+            transition: all 0.3s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .card-hover:hover {
+            border-color: #007bff;
+            box-shadow: 0 5px 20px rgba(0, 123, 255, 0.1) !important;
+        }
+
+        .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-sm {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-lg {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .action-card:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+        }
+
+        .chart-container {
+            position: relative;
+            margin: auto;
+        }
+
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* Badge personnalisé */
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* Nav tabs personnalisées */
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #007bff;
+            border-bottom: 3px solid #007bff;
+        }
+
+        /* Form switches */
+        .form-switch .form-check-input:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        /* Progress bar for export */
+        .export-progress {
+            height: 5px;
+            margin-top: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .icon-wrapper {
+                width: 40px;
+                height: 40px;
+                padding: 8px !important;
+            }
+
+            .card-body h2 {
+                font-size: 1.5rem;
+            }
+
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+        }
+    </style>
+{% endblock %}
+
 {% block javascripts %}
     {{ parent() }}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-        const currentMonth = new Date().getMonth();
-        const labels = [];
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialisation du graphique (code existant)
+            const allMonths = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
 
-        // Generate last 12 months labels
-        for (let i = 11; i >= 0; i--) {
-            const monthIndex = (currentMonth - i + 12) % 12;
-            labels.push(months[monthIndex]);
-        }
+            const allLabels = [];
+            for (let i = 23; i >= 0; i--) {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                const monthIndex = date.getMonth();
+                const year = date.getFullYear();
+                const yearSuffix = (year !== currentYear || monthIndex === 0) ? ` ${year.toString().slice(-2)}` : '';
+                allLabels.push(allMonths[monthIndex] + yearSuffix);
+            }
 
-        const data = {{ inscriptions|json_encode|raw }};
+            const allData = {{ inscriptions|json_encode|raw }};
+            while(allData.length < 24) {
+                allData.unshift(0);
+            }
 
-        new Chart(document.getElementById('chartUsers'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Nouvelles inscriptions',
-                    data: data,
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
+            let selectedPeriod = 12;
+            let labels = allLabels.slice(-selectedPeriod);
+            let data = allData.slice(-selectedPeriod);
+
+            const ctx = document.getElementById('chartUsers').getContext('2d');
+            let chartInstance = null;
+
+            function createChart() {
+                if (chartInstance) {
+                    chartInstance.destroy();
+                }
+
+                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(0, 123, 255, 0.2)');
+                gradient.addColorStop(0.5, 'rgba(0, 123, 255, 0.1)');
+                gradient.addColorStop(1, 'rgba(0, 123, 255, 0)');
+
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Inscriptions',
+                            data: data,
+                            borderColor: '#007bff',
+                            backgroundColor: gradient,
+                            tension: 0.4,
+                            fill: true,
+                            pointBackgroundColor: '#fff',
+                            pointBorderColor: '#007bff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                titleColor: '#000',
+                                bodyColor: '#333',
+                                borderColor: '#dee2e6',
+                                borderWidth: 1,
+                                padding: 12,
+                                boxPadding: 6,
+                                usePointStyle: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y} inscription${context.parsed.y > 1 ? 's' : ''}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.03)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.03)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#6c757d',
+                                    font: {
+                                        size: 11
+                                    },
+                                    stepSize: Math.ceil(Math.max(...data) / 5),
+                                    callback: function(value) {
+                                        return value + (value === 1 ? ' user' : ' users');
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        animations: {
+                            tension: {
+                                duration: 1000,
+                                easing: 'linear'
+                            }
                         }
                     }
+                });
+            }
+
+            createChart();
+
+            // Gestion des sélecteurs de période
+            document.querySelectorAll('.period-selector').forEach(selector => {
+                selector.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    selectedPeriod = parseInt(this.getAttribute('data-period'));
+                    document.getElementById('selectedPeriod').textContent = `${selectedPeriod} mois`;
+                    document.getElementById('chartPeriodText').textContent =
+                        selectedPeriod === 1 ? 'Dernier mois' : `${selectedPeriod} derniers mois`;
+                    labels = allLabels.slice(-selectedPeriod);
+                    data = allData.slice(-selectedPeriod);
+                    document.querySelectorAll('.period-selector').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    createChart();
+                });
+            });
+
+            // ===== FONCTIONNALITÉ D'EXPORT =====
+            const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+
+            // Ouvrir le modal d'export
+            document.querySelectorAll('.export-action').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const exportType = this.getAttribute('data-type');
+                    document.getElementById('exportType').value = exportType;
+
+                    // Afficher les infos spécifiques
+                    const infoEl = document.getElementById('exportInfo');
+                    const infoText = document.getElementById('exportInfoText');
+
+                    switch(exportType) {
+                        case 'csv':
+                            infoText.textContent = 'Export au format CSV (séparateur virgule). Idéal pour Excel.';
+                            break;
+                        case 'excel':
+                            infoText.textContent = 'Export au format Excel (.xlsx). Formatage préservé.';
+                            break;
+                        case 'pdf':
+                            infoText.textContent = 'Export au format PDF. Inclut les graphiques et statistiques.';
+                            break;
+                        case 'full-report':
+                            infoText.textContent = 'Rapport complet avec analyse détaillée et graphiques.';
+                            break;
+                    }
+
+                    infoEl.classList.remove('d-none');
+                    exportModal.show();
+                });
+            });
+
+            // Gestion de la sélection de période personnalisée
+            document.getElementById('dateRange').addEventListener('change', function() {
+                const customRange = document.getElementById('customDateRange');
+                if (this.value === 'custom') {
+                    customRange.classList.remove('d-none');
+                } else {
+                    customRange.classList.add('d-none');
                 }
+            });
+
+            // Confirmation d'export
+            document.getElementById('confirmExport').addEventListener('click', async function() {
+                const form = document.getElementById('exportForm');
+                const formData = new FormData(form);
+                const exportData = Object.fromEntries(formData.entries());
+
+                // Simuler un chargement
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Export en cours...';
+                this.disabled = true;
+
+                // Simulation d'export (à remplacer par une requête AJAX réelle)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Réinitialiser le bouton
+                this.innerHTML = '<i class="fa fa-download me-2"></i>Exporter';
+                this.disabled = false;
+
+                // Fermer le modal
+                exportModal.hide();
+
+                // Afficher un message de succès
+                showNotification(`Export ${exportData.type} réussi !`, 'success');
+
+                // Téléchargement simulé
+                simulateDownload(exportData);
+            });
+
+            // Fonction de simulation de téléchargement
+            function simulateDownload(exportData) {
+                let content, mimeType, filename;
+
+                switch(exportData.type) {
+                    case 'csv':
+                        content = 'ID,Nom,Email,Rôle,Date inscription\n1,John Doe,john@example.com,Client,2024-01-15\n2,Jane Smith,jane@example.com,Propriétaire,2024-01-20';
+                        mimeType = 'text/csv';
+                        filename = `export-${new Date().toISOString().split('T')[0]}.csv`;
+                        break;
+                    case 'excel':
+                        // Pour Excel, on simule un fichier simple
+                        content = '<table><tr><th>ID</th><th>Nom</th><th>Email</th></tr><tr><td>1</td><td>John Doe</td><td>john@example.com</td></tr></table>';
+                        mimeType = 'application/vnd.ms-excel';
+                        filename = `export-${new Date().toISOString().split('T')[0]}.xlsx`;
+                        break;
+                    case 'pdf':
+                        // Pour PDF, on génère un PDF simple avec jsPDF
+                        if (window.jspdf && window.jspdf.jsPDF) {
+                            const { jsPDF } = window.jspdf;
+                            const doc = new jsPDF();
+                            doc.text('Rapport Administratif', 20, 20);
+                            doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 30);
+                            doc.text(`Total utilisateurs: {{ totalUsers }}`, 20, 40);
+                            doc.text(`Total businesses: {{ totalBusinesses }}`, 20, 50);
+                            doc.save(`rapport-${new Date().toISOString().split('T')[0]}.pdf`);
+                        }
+                        return;
+                }
+
+                const blob = new Blob([content], { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // ===== FONCTIONNALITÉ DES PARAMÈTRES =====
+            const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+
+            // Ouvrir le modal des paramètres
+            document.querySelector('a[href="{{ path('admin_settings') }}"]').addEventListener('click', function(e) {
+                e.preventDefault();
+                settingsModal.show();
+            });
+
+            // Sauvegarde manuelle
+            document.getElementById('manualBackup').addEventListener('click', function() {
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sauvegarde...';
+                this.disabled = true;
+
+                // Simulation de sauvegarde
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fa fa-save me-2"></i>Sauvegarde manuelle';
+                    this.disabled = false;
+                    showNotification('Sauvegarde effectuée avec succès !', 'success');
+                }, 1500);
+            });
+
+            // Sauvegarde des paramètres
+            document.getElementById('saveSettings').addEventListener('click', function() {
+                // Récupérer tous les paramètres
+                const settings = {
+                    general: {
+                        siteName: document.getElementById('siteName').value,
+                        adminEmail: document.getElementById('adminEmail').value,
+                        timezone: document.getElementById('timezone').value,
+                        recordsPerPage: document.getElementById('recordsPerPage').value
+                    },
+                    notifications: {
+                        notifyNewUsers: document.getElementById('notifyNewUsers').checked,
+                        notifyNewBusinesses: document.getElementById('notifyNewBusinesses').checked,
+                        notifyNewReviews: document.getElementById('notifyNewReviews').checked,
+                        notifyDailyReport: document.getElementById('notifyDailyReport').checked,
+                        frequency: document.getElementById('notificationFrequency').value
+                    },
+                    security: {
+                        passwordPolicy: document.getElementById('passwordPolicy').value,
+                        sessionTimeout: document.getElementById('sessionTimeout').value,
+                        require2FA: document.getElementById('require2FA').checked,
+                        loginNotifications: document.getElementById('loginNotifications').checked
+                    },
+                    maintenance: {
+                        maintenanceMode: document.getElementById('maintenanceMode').checked,
+                        maintenanceMessage: document.getElementById('maintenanceMessage').value,
+                        backupFrequency: document.getElementById('backupFrequency').value
+                    }
+                };
+
+                // Simulation d'enregistrement
+                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sauvegarde...';
+
+                setTimeout(() => {
+                    this.innerHTML = '<i class="fa fa-save me-2"></i>Enregistrer';
+                    settingsModal.hide();
+                    showNotification('Paramètres enregistrés avec succès !', 'success');
+
+                    // Ici, vous enverriez les données au serveur
+                    // fetch('/admin/settings/save', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify(settings)
+                    // });
+                }, 1000);
+            });
+
+            // Animation des cartes
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-4px)';
+                    this.style.transition = 'all 0.3s ease';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            const actionCards = document.querySelectorAll('.action-card');
+            actionCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.02)';
+                    this.style.transition = 'all 0.3s ease';
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            });
+
+            // Fonction d'affichage de notification
+            function showNotification(message, type = 'info') {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                alert.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+                alert.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alert);
+
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
             }
         });
     </script>

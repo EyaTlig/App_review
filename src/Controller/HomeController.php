@@ -5,7 +5,6 @@ use App\Entity\Business;
 use App\Entity\BusinessPhoto;
 use App\Entity\Category;
 use App\Entity\User;
-use App\Form\BusinessType;
 use App\Repository\BusinessRepository;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,27 +14,54 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 class HomeController extends AbstractController
 {
     #[Route('/', name: 'client_home')]
-    public function index(BusinessRepository $businessRepo, CategoryRepository $categoryRepo, Request $request): Response
+    public function index(
+        BusinessRepository $businessRepo,
+        CategoryRepository $categoryRepo,
+        Request $request,
+        UserInterface $user = null
+    ): Response
     {
-        $search = $request->query->get('search');   // valeur du champ de recherche
+        $search = $request->query->get('search');
         $categoryId = $request->query->get('category');
+
+        // Conversion de string à int/null
+        $categoryId = $categoryId !== null && $categoryId !== '' ? (int)$categoryId : null;
+
+        $filters = [
+            'search' => $search,
+            'category' => $categoryId,
+            'sort' => $request->query->get('sort', 'newest'),
+            'min_rating' => $request->query->get('min_rating'),
+            'has_website' => $request->query->get('has_website') === '1',
+        ];
 
         $categories = $categoryRepo->findAll();
 
-        // Filtrage des businesses
-        $businesses = $businessRepo->findBySearchAndCategory($search, $categoryId);
+        $businesses = $businessRepo->findWithFilters($filters);
+
+        // Vérifier les favoris si l'utilisateur est connecté
+        $favorites = [];
+        if ($user) {
+            foreach ($user->getFavorites() as $fav) {
+                $favorites[] = $fav->getId();
+            }
+        }
 
         return $this->render('home/home.html.twig', [
             'businesses' => $businesses,
             'categories' => $categories,
+            'favorites' => $favorites,
+            'activeFilters' => $filters, // Pour afficher les badges
         ]);
     }
+
 
     #[Route('/profile', name: 'user_profile')]
     #[IsGranted('IS_AUTHENTICATED_FULLY')] // accessible par tout utilisateur connecté

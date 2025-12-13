@@ -28,8 +28,24 @@ class ReviewController extends AbstractController
         $users = $em->getRepository(User::class)->findAll();
         $businesses = $em->getRepository(Business::class)->findAll();
 
+        // Calcul des avis du mois en cours
+        $startOfMonth = new \DateTime('first day of this month');
+        $startOfMonth->setTime(0, 0, 0);
+
+        $endOfMonth = new \DateTime('last day of this month');
+        $endOfMonth->setTime(23, 59, 59);
+
+        $reviewsThisMonth = $em->getRepository(Review::class)->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.createdAt BETWEEN :start AND :end')
+            ->setParameter('start', $startOfMonth)
+            ->setParameter('end', $endOfMonth)
+            ->getQuery()
+            ->getSingleScalarResult();
+
         return $this->render('review/review.html.twig', [
             'reviews' => $reviews,
+            'reviewsThisMonth' => (int) $reviewsThisMonth, // Conversion en entier
             'users' => $users,
             'businesses' => $businesses
         ]);

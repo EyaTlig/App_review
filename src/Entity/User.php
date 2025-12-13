@@ -2,9 +2,11 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity]
 #[ORM\Table(name: "user")]
@@ -69,4 +71,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setIsActive(bool $isActive): self { $this->isActive = $isActive; return $this; }
 
     public function getReadableRole(): string { return ucfirst(strtolower($this->role)); }
+    #[ORM\ManyToMany(targetEntity: Business::class)]
+    #[ORM\JoinTable(name: "favorite_business")]
+    private Collection $favorites;
+
+    public function __construct()
+    {
+        $this->favorites = new ArrayCollection();
+    }
+
+    public function getFavorites(): Collection
+    {
+        return $this->favorites;
+    }
+
+    public function addFavorite(Business $business): self
+    {
+        if (!$this->favorites->contains($business)) {
+            $this->favorites->add($business);
+        }
+
+        return $this;
+    }
+
+    public function removeFavorite(Business $business): self
+    {
+        $this->favorites->removeElement($business);
+        return $this;
+    }
+
 }

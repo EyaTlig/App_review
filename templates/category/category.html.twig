@@ -1,95 +1,534 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gestion des Catégories{% endblock %}
+{% block title %}Gestion des Catégories - Administration{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <h1>Gestion des Catégories</h1>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Gestion des Catégories</h1>
+                <p class="text-muted mb-0">Organisez les catégories de votre plateforme</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openAddModal()">
+                <i class="fa fa-plus-circle me-2"></i>Nouvelle catégorie
+            </button>
+        </div>
 
-        <!-- Bouton Ajouter Catégorie -->
-        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openAddModal()">Ajouter Catégorie</button>
-
-        <table class="table table-bordered table-striped">
-            <thead>
-            <tr>
-                <th>Nom</th>
-                <th class="text-center">Nombre de Businesses</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for category in categories %}
-                <tr>
-                    <td>{{ category.name }}</td>
-                    <td class="text-center">
-                        <span class="badge bg-secondary">
-                            {{ category.businesses|length }}
+        <!-- Carte principale -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
                         </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-warning"
-                                onclick="openEditModal({{ category.id }}, '{{ category.name|e('js') }}')">
-                            Modifier
-                        </button>
-                        <a href="{{ path('category_delete', {'id': category.id}) }}" class="btn btn-sm btn-danger"
-                           onclick="return confirm('Voulez-vous vraiment supprimer cette catégorie ?');">
-                            Supprimer
-                        </a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="3" class="text-center">Aucune catégorie trouvée</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Modal Ajout / Modification -->
-    <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="categoryForm" method="POST">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalTitle">Ajouter Catégorie</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="formAlert"></div>
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nom</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher une catégorie..." onkeyup="filterTable()">
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="submitButton">Enregistrer</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                        <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">
+                            <i class="fa fa-layer-group me-1"></i>
+                            {{ categories|length }} catégorie{% if categories|length > 1 %}s{% endif %}
+                        </span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary active" onclick="sortTable('name')">
+                                    <i class="fa fa-sort-alpha-down me-1"></i>Nom
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="sortTable('count')">
+                                    <i class="fa fa-sort-numeric-down me-1"></i>Utilisation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tableau des catégories -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="categoriesTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <span>Catégorie</span>
+                                </div>
+                            </th>
+                            <th class="text-center">Utilisation</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for category in categories %}
+                            <tr class="category-row" data-name="{{ category.name|lower }}" data-count="{{ category.businesses|length }}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="category-color me-3" ></div>
+                                        <div>
+                                            <strong class="d-block">{{ category.name }}</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex flex-column align-items-center">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 mb-1">
+                                        <i class="fa fa-store me-1"></i>
+                                        {{ category.businesses|length }} business{% if category.businesses|length > 1 %}es{% endif %}
+                                    </span>
+
+                                    </div>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-primary"
+                                                onclick="openEditModal({{ category.id }}, '{{ category.name|e('js') }}')"
+                                                title="Modifier">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+
+                                        <button class="btn btn-outline-danger"
+                                                onclick="confirmDelete({{ category.id }}, '{{ category.name|e('js') }}', {{ category.businesses|length }})"
+                                                title="Supprimer">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-tags fa-2x text-muted"></i>
+                                        </div>
+                                        <h5 class="mb-2">Aucune catégorie trouvée</h5>
+                                        <p class="text-muted mb-3">Créez votre première catégorie pour organiser vos businesses</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" onclick="openAddModal()">
+                                            <i class="fa fa-plus-circle me-2"></i>Créer une catégorie
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <!-- Modal Ajout/Modification -->
+    <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <form id="categoryForm" method="POST">
+                    <input type="hidden" id="categoryId" name="id">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="modalTitle">
+                            <i class="fa fa-tags me-2"></i>
+                            <span id="modalTitleText">Ajouter une catégorie</span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div id="formAlert" class="alert d-none"></div>
+
+                        <div class="mb-4">
+                            <label for="name" class="form-label fw-semibold">
+                                Nom de la catégorie
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="name" name="name" required
+                                   placeholder="Ex: Restaurants, Hôtels, Santé, etc."
+                                   oninput="updateSlugPreview()">
+                            <div class="form-text">
+                                Choisissez un nom clair et descriptif. Maximum 50 caractères.
+                                <span id="charCount" class="float-end">0/50</span>
+                            </div>
+                        </div>
+
+                        <!-- Suggestions -->
+                        <div class="mt-4">
+                            <h6 class="mb-2 text-muted">Suggestions populaires</h6>
+                            <div class="d-flex flex-wrap gap-2" id="suggestions">
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Restaurants')">Restaurants</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Hôtels')">Hôtels</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Santé')">Santé</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Shopping')">Shopping</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Éducation')">Éducation</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Transport')">Transport</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Loisirs')">Loisirs</span>
+                                <span class="badge bg-light text-dark border cursor-pointer" onclick="fillSuggestion('Services')">Services</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="fa fa-save me-2"></i>
+                            <span id="submitButtonText">Créer la catégorie</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0">
+                <div class="modal-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="icon-wrapper-lg bg-danger bg-opacity-10 rounded-circle mb-3 mx-auto">
+                            <i class="fa fa-exclamation-triangle fa-2x text-danger"></i>
+                        </div>
+                        <h5 class="mb-3">Confirmer la suppression</h5>
+                        <p class="text-muted mb-0" id="deleteMessage">
+                            Êtes-vous sûr de vouloir supprimer cette catégorie ?
+                        </p>
+                    </div>
+
+                    <div class="alert alert-warning" id="warningAlert" style="display: none;">
+                        <div class="d-flex">
+                            <i class="fa fa-exclamation-circle me-2 mt-1"></i>
+                            <div>
+                                <strong>Attention !</strong>
+                                <div id="warningMessage"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-2 mt-4">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                            <i class="fa fa-trash me-2"></i>Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .category-row:hover {
+            background-color: #f8f9fa;
+        }
+
+        .category-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .category-color-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .form-control-lg {
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
+        }
+
+        .badge.bg-light {
+            transition: all 0.2s ease;
+        }
+
+        .badge.bg-light:hover {
+            background-color: #007bff !important;
+            color: white !important;
+            cursor: pointer;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .fw-bold {
+            font-size: 1.25rem;
+            color: #007bff;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* Animation pour les lignes */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .category-row {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     <script>
+        let currentCategoryId = null;
+        let currentSort = 'name';
+        let sortDirection = 'asc';
+
         function openAddModal() {
             const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
             modal.show();
-            document.getElementById('modalTitle').textContent = 'Ajouter Catégorie';
+
+            document.getElementById('modalTitleText').textContent = 'Ajouter une catégorie';
+            document.getElementById('submitButtonText').textContent = 'Créer la catégorie';
             document.getElementById('categoryForm').action = "{{ path('category_add') }}";
-            document.getElementById('name').value = '';
-            document.getElementById('formAlert').innerHTML = '';
+
+            // Réinitialiser le formulaire
+            const nameInput = document.getElementById('name');
+            nameInput.value = '';
+            nameInput.focus();
+
+            // Mettre à jour la prévisualisation
+            updateSlugPreview();
+
+            // Masquer les alertes
+            const formAlert = document.getElementById('formAlert');
+            formAlert.className = 'alert d-none';
+            formAlert.innerHTML = '';
+
+            currentCategoryId = null;
         }
 
         function openEditModal(id, name) {
             const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
             modal.show();
-            document.getElementById('modalTitle').textContent = 'Modifier Catégorie';
+
+            document.getElementById('modalTitleText').textContent = 'Modifier la catégorie';
+            document.getElementById('submitButtonText').textContent = 'Enregistrer';
             document.getElementById('categoryForm').action = '/category/edit/' + id;
-            document.getElementById('name').value = name;
-            document.getElementById('formAlert').innerHTML = '';
+
+            // Remplir le formulaire
+            const nameInput = document.getElementById('name');
+            nameInput.value = name;
+            nameInput.focus();
+
+            // Mettre à jour la prévisualisation
+            updateSlugPreview();
+
+            // Masquer les alertes
+            const formAlert = document.getElementById('formAlert');
+            formAlert.className = 'alert d-none';
+            formAlert.innerHTML = '';
+
+            currentCategoryId = id;
         }
+
+        function fillSuggestion(name) {
+            document.getElementById('name').value = name;
+            updateSlugPreview();
+        }
+
+        function updateSlugPreview() {
+            const nameInput = document.getElementById('name');
+            const previewName = document.getElementById('previewName');
+            const slugValue = document.getElementById('slugValue');
+            const charCount = document.getElementById('charCount');
+
+            const name = nameInput.value;
+            previewName.textContent = name || 'Nom de la catégorie';
+
+            // Générer un slug
+            const slug = name.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+                .replace(/[^a-z0-9\s-]/g, '') // Supprime les caractères spéciaux
+                .replace(/\s+/g, '-') // Remplace les espaces par des tirets
+                .replace(/-+/g, '-') // Supprime les tirets multiples
+                .trim();
+
+            slugValue.textContent = slug || 'nom-de-la-categorie';
+
+            // Mettre à jour le compteur de caractères
+            charCount.textContent = `${name.length}/50`;
+            if (name.length > 50) {
+                charCount.classList.add('text-danger');
+                nameInput.classList.add('is-invalid');
+            } else {
+                charCount.classList.remove('text-danger');
+                nameInput.classList.remove('is-invalid');
+            }
+        }
+
+        function confirmDelete(id, name, businessCount) {
+            const deleteMessage = document.getElementById('deleteMessage');
+            const warningAlert = document.getElementById('warningAlert');
+            const warningMessage = document.getElementById('warningMessage');
+
+            deleteMessage.innerHTML = `Êtes-vous sûr de vouloir supprimer <strong>"${name}"</strong> ?`;
+
+            if (businessCount > 0) {
+                warningAlert.style.display = 'block';
+                warningMessage.innerHTML = `
+            Cette catégorie est utilisée par <strong>${businessCount} business${businessCount > 1 ? 'es' : ''}</strong>.
+            ${businessCount > 1 ? 'Ils seront' : 'Il sera'} déplacé${businessCount > 1 ? 's' : ''} dans "Non catégorisé".
+        `;
+            } else {
+                warningAlert.style.display = 'none';
+            }
+
+            document.getElementById('confirmDeleteBtn').href = `/category/delete/${id}`;
+
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.category-row');
+
+            rows.forEach(row => {
+                const name = row.dataset.name;
+                row.style.display = name.includes(filter) ? '' : 'none';
+            });
+        }
+
+        function sortTable(sortBy) {
+            const table = document.getElementById('categoriesTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('.category-row'));
+
+            // Changer l'ordre si on clique sur le même critère
+            if (currentSort === sortBy) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort = sortBy;
+                sortDirection = 'asc';
+            }
+
+            rows.sort((a, b) => {
+                let aValue, bValue;
+
+                if (sortBy === 'name') {
+                    aValue = a.dataset.name;
+                    bValue = b.dataset.name;
+                } else if (sortBy === 'count') {
+                    aValue = parseInt(a.dataset.count);
+                    bValue = parseInt(b.dataset.count);
+                }
+
+                if (sortDirection === 'asc') {
+                    return aValue > bValue ? 1 : -1;
+                } else {
+                    return aValue < bValue ? 1 : -1;
+                }
+            });
+
+            // Réorganiser les lignes
+            rows.forEach(row => tbody.appendChild(row));
+
+            // Mettre à jour les boutons de tri
+            updateSortButtons(sortBy);
+        }
+
+        function updateSortButtons(activeSort) {
+            const buttons = document.querySelectorAll('.btn-group .btn');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes('Nom') && activeSort === 'name') {
+                    btn.classList.add('active');
+                    btn.innerHTML = `<i class="fa fa-sort-alpha-${sortDirection === 'asc' ? 'down' : 'up'} me-1"></i>Nom`;
+                } else if (btn.textContent.includes('Utilisation') && activeSort === 'count') {
+                    btn.classList.add('active');
+                    btn.innerHTML = `<i class="fa fa-sort-numeric-${sortDirection === 'asc' ? 'down' : 'up'} me-1"></i>Utilisation`;
+                } else {
+                    btn.classList.remove('active');
+                    if (btn.textContent.includes('Nom')) {
+                        btn.innerHTML = `<i class="fa fa-sort-alpha-down me-1"></i>Nom`;
+                    } else if (btn.textContent.includes('Utilisation')) {
+                        btn.innerHTML = `<i class="fa fa-sort-numeric-down me-1"></i>Utilisation`;
+                    }
+                }
+            });
+        }
+
+        // Gestion du formulaire
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryForm = document.getElementById('categoryForm');
+            if (categoryForm) {
+                categoryForm.addEventListener('submit', function(e) {
+                    const name = document.getElementById('name').value.trim();
+
+                    if (name.length === 0) {
+                        e.preventDefault();
+                        showAlert('Le nom de la catégorie est requis.', 'danger');
+                        return;
+                    }
+
+                    if (name.length > 50) {
+                        e.preventDefault();
+                        showAlert('Le nom ne doit pas dépasser 50 caractères.', 'danger');
+                        return;
+                    }
+
+                    const submitBtn = document.getElementById('submitButton');
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Traitement...';
+                    submitBtn.disabled = true;
+                });
+            }
+
+            // Initialiser la prévisualisation
+            updateSlugPreview();
+        });
+
+        function showAlert(message, type) {
+            const formAlert = document.getElementById('formAlert');
+            formAlert.className = `alert alert-${type}`;
+            formAlert.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fa fa-${type === 'danger' ? 'exclamation-circle' : 'check-circle'} me-2"></i>
+            <div>${message}</div>
+        </div>
+    `;
+            formAlert.style.display = 'block';
+        }
+
+
     </script>
 {% endblock %}

@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Entity\Notification;
 use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -45,10 +46,16 @@ class SecurityController extends AbstractController
     }
 
     #[Route('/logout', name: 'app_logout')]
-    public function logout(): void { throw new \Exception('This should never be reached!'); }
+    public function logout(): void {
+        throw new \Exception('This should never be reached!');
+    }
 
     #[Route('/register', name: 'app_register')]
-    public function register(Request $request, EntityManagerInterface $em, UserPasswordHasherInterface $passwordHasher): Response
+    public function register(
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher
+    ): Response
     {
         if ($request->isMethod('POST')) {
 
@@ -69,6 +76,9 @@ class SecurityController extends AbstractController
             if ($role === 'SERVICE_OWNER') {
                 $user->setCin($cin);
                 $user->setIsValidated(false);
+
+                // Créer une notification pour l'admin
+                $this->createAdminNotification($em, $user);
             } else {
                 $user->setIsValidated(true);
             }
@@ -90,9 +100,34 @@ class SecurityController extends AbstractController
                 $this->addFlash('success', 'Inscription réussie. Vous recevrez un email après la confirmation de votre compte par l’admin.');
             } else {
                 $this->addFlash('success', 'Inscription réussie. Vous pouvez vous connecter.');
-            }            return $this->redirectToRoute('app_login');
+            }
+
+            return $this->redirectToRoute('app_login');
         }
 
         return $this->render('security/register.html.twig');
+    }
+
+// Méthode pour créer une notification pour l'admin
+    private function createAdminNotification(EntityManagerInterface $em, User $newOwner): void
+    {
+        // Trouver l'admin (vous pouvez adapter selon votre logique)
+        $admin = $em->getRepository(User::class)->findOneBy(['role' => 'ADMIN']);
+
+        // Si pas d'admin, on prend le premier utilisateur avec rôle ADMIN
+        if (!$admin) {
+            $admin = $em->getRepository(User::class)->findOneBy([], ['id' => 'ASC']);
+        }
+
+        if ($admin) {
+            $notification = new Notification();
+            $notification->setTitle('Nouveau propriétaire à valider');
+            $notification->setMessage("Un nouveau propriétaire s'est inscrit : {$newOwner->getName()} ({$newOwner->getEmail()}). Veuillez vérifier son CIN : {$newOwner->getCin()}");
+            $notification->setType('warning');
+            $notification->setUser($admin);
+            $notification->setIsRead(false);
+
+            $em->persist($notification);
+        }
     }
 }

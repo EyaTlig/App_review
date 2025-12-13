@@ -18,8 +18,10 @@ class FavoriteBusiness
     #[ORM\ManyToOne]
     private ?User $user = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: "favoriteBusinesses")]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Business $business = null;
+
 
     public function getId(): ?int
     {

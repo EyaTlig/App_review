@@ -26,10 +26,12 @@ class DashboardController extends AbstractController
         $totalOwners = $userRepo->count(['role' => 'SERVICE_OWNER']);
 
         // Inscriptions per month (last 12 months)
-        $inscriptionsByMonth = array_fill(1, 12, 0); // mois 1 à 12 = 0 par défaut
+        $inscriptionsByMonth = array_fill(0, 12, 0); // 0 à 11
         foreach ($userRepo->countRegistrationsByMonth() as $data) {
-            $inscriptionsByMonth[(int)$data['month']] = (int)$data['total'];
+            $monthIndex = (int)$data['month'] - 1; // 0 = Janvier
+            $inscriptionsByMonth[$monthIndex] = (int)$data['total'];
         }
+
 
         return $this->render('dashboard/dashbord.html.twig', [
             'totalUsers' => $totalUsers,

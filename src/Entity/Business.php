@@ -47,10 +47,16 @@ class Business
     #[ORM\OneToMany(targetEntity: Review::class, mappedBy:"business", cascade:["persist", "remove"])]
     private Collection $reviews;
 
+    #[ORM\OneToMany(targetEntity: FavoriteBusiness::class, mappedBy: "business", orphanRemoval: true)]
+    private Collection $favoriteBusinesses;
+
+
     public function __construct()
     {
         $this->photos = new ArrayCollection();
         $this->reviews = new ArrayCollection();
+        $this->favoriteBusinesses = new ArrayCollection();
+
     }
 
     // --- GETTERS & SETTERS ---
@@ -136,6 +142,46 @@ class Business
         }
 
         return (float) ($total / $count);
+    }
+    public function isFavoritedByUser(?User $user): bool
+    {
+        if (!$user) return false;
+
+        foreach ($this->favoriteBusinesses as $fav) {
+            if ($fav->getUser() === $user) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    public function isFavorite(User $user): bool
+    {
+        foreach ($this->favoriteBusinesses as $fav) {
+            if ($fav->getUser() === $user) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getFavoriteBusinesses(): Collection
+    {
+        return $this->favoriteBusinesses;
+    }
+
+    public function addFavoriteBusiness(FavoriteBusiness $fav): self
+    {
+        if (!$this->favoriteBusinesses->contains($fav)) {
+            $this->favoriteBusinesses[] = $fav;
+        }
+        return $this;
+    }
+
+    public function removeFavoriteBusiness(FavoriteBusiness $fav): self
+    {
+        $this->favoriteBusinesses->removeElement($fav);
+        return $this;
     }
 
 

@@ -1,5 +1,5 @@
 <div class="modal-body p-4">
-    <div class="row g-4">  <!-- g-4 pour espacement entre colonnes -->
+    <div class="row g-4">
 
         <!-- PHOTOS -->
         <div class="col-lg-7 col-md-12">
@@ -31,9 +31,27 @@
 
         <!-- REVIEWS & FORM -->
         <div class="col-lg-5 col-md-12">
-            <!-- EN-TÊTE BUSINESS -->
+            <!-- HEADER BUSINESS -->
             <div class="mb-3">
-                <h4 class="fw-bold text-dark mb-1">{{ business.name }}</h4>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4 class="fw-bold text-dark mb-1">{{ business.name }}</h4>
+                    {% if app.user %}
+                        <button type="button"
+                                class="btn btn-link p-0 border-0 bg-transparent favorite-toggle-btn"
+                                data-business-id="{{ business.id }}">
+                            <i class="bi
+            {% if business.isFavorite(app.user) %}
+                bi-heart-fill text-danger
+            {% else %}
+                bi-heart text-secondary
+            {% endif %}"
+                               style="font-size: 1.7rem; cursor:pointer;"></i>
+                        </button>
+                    {% endif %}
+
+
+                </div>
+
                 <p class="card-text flex-grow-1">{{ business.description|default('Pas de description') }}</p>
 
                 <p class="fs-4 mb-0">
@@ -55,7 +73,9 @@
             <!-- REVIEWS -->
             <div class="card shadow-sm rounded-3 mb-3">
                 <div class="card-header bg-light border-0 py-2">
-                    <h6 class="mb-0 d-flex align-items-center"><i class="bi bi-chat-square-text-fill text-primary me-2"></i>Avis</h6>
+                    <h6 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-chat-square-text-fill text-primary me-2"></i>Avis
+                    </h6>
                 </div>
                 <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
                     {% for r in reviews %}
@@ -79,12 +99,11 @@
                                      data-full="{{ asset('uploads/review_photos/' ~ photo.url) }}"
                                      style="width: 50px; height: 50px; object-fit: cover; cursor:pointer;">
                             {% endfor %}
-
                         </div>
                     {% else %}
                         <div class="text-center py-4 text-muted">
                             <i class="bi bi-star fs-1 mb-2 d-block"></i>
-                            <p>Aucun avis pour l’instant. Sois le premier !</p>
+                            <p>Aucun avis pour l'instant. Sois le premier !</p>
                         </div>
                     {% endfor %}
                 </div>
@@ -109,17 +128,13 @@
                 <div class="mb-3 position-relative">
                     <label class="form-label fw-semibold">Commentaire</label>
                     <textarea class="form-control pe-5" name="comment" rows="3" placeholder="Partagez votre expérience..." required></textarea>
-                    <!-- Icône pour uploader -->
                     <label for="photosInput{{ business.id }}" class="position-absolute top-50 end-0 translate-middle-y me-3 text-primary" style="cursor:pointer; z-index: 10;" title="Ajouter des photos">
                         <i class="bi bi-camera-fill fs-4"></i>
                     </label>
                     <input type="file" id="photosInput{{ business.id }}" name="photos[]" multiple accept="image/*" class="d-none">
                 </div>
 
-                <!-- PRÉVISUALISATIONS DES PHOTOS -->
-                <div id="filePreviews{{ business.id }}" class="mb-3 d-none"></div>  <!-- Masqué par défaut -->
-
-                <!-- COMPTEUR -->
+                <div id="filePreviews{{ business.id }}" class="mb-3 d-none"></div>
                 <small id="photoCount{{ business.id }}" class="text-muted d-block mb-3"></small>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
@@ -127,76 +142,42 @@
                 </button>
             </form>
         </div>
-
     </div>
 </div>
-
 <style>
-    /* Star Rating Amélioré */
-    .star-rating {
-        direction: rtl;
-        display: inline-flex;
-        font-size: 1.8rem;
-        cursor: pointer;
-        justify-content: center;
-    }
+    /* Star Rating */
+    .star-rating { direction: rtl; display: inline-flex; font-size: 1.8rem; cursor: pointer; justify-content: center; }
     .star-rating input { display: none; }
-    .star-rating label {
-        color: #ddd;
-        transition: color 0.2s ease;
-        margin: 0 2px;
-    }
+    .star-rating label { color: #ddd; transition: color 0.2s ease; margin: 0 2px; }
     .star-rating input:checked ~ label,
     .star-rating label:hover,
-    .star-rating label:hover ~ label {
-        color: #ffc107;
-    }
+    .star-rating label:hover ~ label { color: #ffc107; }
 
-    /* Reviews Scroll Smooth */
-    .card-body[style*="overflow-y"]::-webkit-scrollbar {
-        width: 4px;
-    }
-    .card-body[style*="overflow-y"]::-webkit-scrollbar-thumb {
-        background: #dee2e6;
-        border-radius: 2px;
-    }
+    /* Reviews Scroll */
+    .card-body[style*="overflow-y"]::-webkit-scrollbar { width: 4px; }
+    .card-body[style*="overflow-y"]::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 2px; }
 
-    /* Prévisualisations Photos */
-    .photo-preview {
-        position: relative;
-        display: inline-block;
-        margin: 0 5px 5px 0;
-    }
-    .photo-preview img {
-        width: 50px;
-        height: 50px;
-        object-fit: cover;
-        border-radius: 8px;
-        border: 2px solid #e9ecef;
-    }
-    .remove-photo {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        font-size: 0.7rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    /* Prévisualisation photos */
+    .photo-preview { position: relative; display: inline-block; margin: 0 5px 5px 0; }
+    .photo-preview img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid #e9ecef; }
+    .remove-photo { position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .remove-photo:hover { background: #c82333; }
-</style>
 
-<script>
-    // Carousel (inchangé)
-    document.addEventListener('DOMContentLoaded', function() {
-        var myCarousel = document.querySelectorAll('.carousel');
-        myCarousel.forEach(function(c) { new bootstrap.Carousel(c); });
-    });
-</script>
+    /* Bouton favori */
+    .favorite-toggle-btn {
+        transition: transform 0.2s ease;
+    }
+
+    .favorite-toggle-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .favorite-toggle-btn:active {
+        transform: scale(0.95);
+    }
+
+    .favorite-toggle-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>

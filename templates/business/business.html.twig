@@ -1,146 +1,386 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Gestion des Businesses{% endblock %}
+{% block title %}Gestion des Businesses - Administration{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <h1>Gestion des Businesses</h1>
+    <div class="container-fluid px-4">
+        <!-- Header avec titre et actions -->
+        <div class="d-flex justify-content-between align-items-center py-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold">Gestion des Businesses</h1>
+                <p class="text-muted mb-0">Créez et gérez les établissements de la plateforme</p>
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class="fa fa-plus-circle me-2"></i>Nouveau Business
+            </button>
+        </div>
 
-        <!-- Bouton Ajouter Business -->
-        <button class="btn btn-primary mb-3" onclick="openAddModal()">Ajouter Business</button>
+        <!-- Carte principale -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-0 py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                            <input type="text" class="form-control border-start-0" id="searchInput"
+                                   placeholder="Rechercher un business..." onkeyup="filterTable()">
+                        </div>
+                    </div>
 
-        <!-- Liste des Businesses -->
-        <table class="table table-bordered table-striped">
-            <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Adresse</th>
-                <th>Téléphone</th>
-                <th>Site Web</th>
-                <th>Owner</th>
-                <th>Catégorie</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for business in businesses %}
-                <tr>
-                    <td>{{ business.name }}</td>
-                    <td>{{ business.address }}</td>
-                    <td>{{ business.phone }}</td>
-                    <td>{{ business.website }}</td>
-                    <td>{{ business.owner ? business.owner.name : '' }}</td>
-                    <td>{{ business.category ? business.category.name : '' }}</td>
-                    <td>
-                        <button class="btn btn-warning btn-sm"
-                                onclick="openEditModal(
-                                {{ business.id }},
-                                        '{{ business.name|e('js') }}',
-                                        '{{ business.address|e('js') }}',
-                                        '{{ business.phone|e('js') }}',
-                                        '{{ business.website|e('js') }}',
-                                {{ business.owner ? business.owner.id : 'null' }},
-                                {{ business.category ? business.category.id : 'null' }},
-                                        '{{ business.description|e('js') }}'
-                                        )">
-                            Modifier
-                        </button>
-                        <a href="{{ path('business_delete', {'id': business.id}) }}" class="btn btn-danger btn-sm"
-                           onclick="return confirm('Voulez-vous vraiment supprimer ce business ?');">
-                            Supprimer
-                        </a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="7" class="text-center">Aucun business trouvé</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                </div>
+            </div>
+
+            <!-- Tableau des businesses -->
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="businessTable">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <span>Nom</span>
+                                    <a href="#" class="ms-1 text-muted">
+                                        <i class="fa fa-sort"></i>
+                                    </a>
+                                </div>
+                            </th>
+                            <th>Adresse</th>
+                            <th>Contact</th>
+                            <th>Propriétaire</th>
+                            <th>Catégorie</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for business in businesses %}
+                            <tr class="business-row">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-wrapper-sm bg-primary bg-opacity-10 rounded-circle me-3">
+                                            <i class="fa fa-briefcase text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">{{ business.name }}</strong>
+                                            <small class="text-muted">{{ business.website|default('Aucun site') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;">
+                                        {{ business.address }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span>{{ business.phone }}</span>
+
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2">
+                                            <div class="avatar-title bg-light rounded-circle">
+                                                {{ business.owner ? business.owner.name|first|upper : '?' }}
+                                            </div>
+                                        </div>
+                                        <span>{{ business.owner ? business.owner.name : 'Non assigné' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                    {{ business.category ? business.category.name : 'Non catégorisé' }}
+                                </span>
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary"
+                                                onclick="openEditModal(
+                                                {{ business.id }},
+                                                        '{{ business.name|e('js') }}',
+                                                        '{{ business.address|e('js') }}',
+                                                        '{{ business.phone|e('js') }}',
+                                                        '{{ business.website|e('js') }}',
+                                                {{ business.owner ? business.owner.id : 'null' }},
+                                                {{ business.category ? business.category.id : 'null' }},
+                                                        '{{ business.description|e('js') }}',
+                                                        )">
+                                            <i class="fa fa-edit"></i>
+                                        </button>
+
+                                        <button type="button" class="btn btn-outline-danger"
+                                                onclick="confirmDelete({{ business.id }}, '{{ business.name|e('js') }}')">
+                                            <i class="fa fa-trash"> </i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="empty-state">
+                                        <div class="icon-wrapper-lg bg-light rounded-circle mb-3 mx-auto">
+                                            <i class="fa fa-store fa-2x text-muted"></i>
+                                        </div>
+                                        <h5 class="mb-2">Aucun business trouvé</h5>
+                                        <p class="text-muted mb-3">Commencez par créer votre premier business</p>
+                                        <button class="btn btn-primary" onclick="openAddModal()">
+                                            <i class="fa fa-plus me-2"></i>Créer un business
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if businesses|length > 0 %}
+                <div class="card-footer bg-white border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted">Affichage de 1 à {{ businesses|length }} sur {{ businesses|length }} businesses</span>
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">
+                                        <i class="fa fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- Modal Ajout / Modification -->
+    <!-- Modal Ajout/Modification -->
     <div class="modal fade" id="businessModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg">
                 <form id="businessForm" method="POST" enctype="multipart/form-data">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalTitle">Ajouter Business</h5>
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="modalTitle">
+                            <i class="fa fa-store me-2"></i>
+                            <span id="modalTitleText">Ajouter Business</span>
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
-                        <div id="formAlert"></div>
+                    <div class="modal-body p-4">
+                        <div id="formAlert" class="alert d-none"></div>
 
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nom</label>
-                            <input type="text" class="form-control" id="name" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Adresse</label>
-                            <input type="text" class="form-control" id="address" name="address" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Téléphone</label>
-                            <input type="text" class="form-control" id="phone" name="phone" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="website" class="form-label">Site Web</label>
-                            <input type="text" class="form-control" id="website" name="website">
-                        </div>
-                        <div class="mb-3">
-                            <label for="owner" class="form-label">Owner</label>
-                            <select class="form-select" id="owner" name="owner" required>
-                                <option value="">-- Choisir un owner --</option>
-                                {% for user in users %}
-                                    <option value="{{ user.id }}">{{ user.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="category" class="form-label">Catégorie</label>
-                            <select class="form-select" id="category" name="category" required>
-                                <option value="">-- Choisir une catégorie --</option>
-                                {% for category in categories %}
-                                    <option value="{{ category.id }}">{{ category.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" required></textarea>
-                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label fw-semibold">Nom du business *</label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       placeholder="Ex: Restaurant Le Gourmet">
+                            </div>
 
-                        <!-- Case à cocher pour ajouter photos après création -->
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" value="1" id="addPhotos" name="addPhotos">
-                            <label class="form-check-label" for="addPhotos">
-                                Ajouter des photos maintenant
-                            </label>
+
+                            <div class="col-12">
+                                <label for="address" class="form-label fw-semibold">Adresse complète *</label>
+                                <input type="text" class="form-control" id="address" name="address" required
+                                       placeholder="123 Avenue des Champs-Élysées, 75008 Paris">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label fw-semibold">Téléphone *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+33</span>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required
+                                           placeholder="1 23 45 67 89">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="website" class="form-label fw-semibold">Site Web</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">https://</span>
+                                    <input type="text" class="form-control" id="website" name="website"
+                                           placeholder="www.monbusiness.com">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="owner" class="form-label fw-semibold">Propriétaire *</label>
+                                <select class="form-select select2-style" id="owner" name="owner" required>
+                                    <option value="">Sélectionner un propriétaire</option>
+                                    {% for user in users %}
+                                        <option value="{{ user.id }}">{{ user.name }} </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="category" class="form-label fw-semibold">Catégorie *</label>
+                                <select class="form-select select2-style" id="category" name="category" required>
+                                    <option value="">Choisir une catégorie</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="description" class="form-label fw-semibold">Description *</label>
+                                <textarea class="form-control" id="description" name="description"
+                                          rows="4" placeholder="Décrivez votre business..."></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card border mt-2">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="1"
+                                                   id="addPhotos" name="addPhotos">
+                                            <label class="form-check-label fw-semibold" for="addPhotos">
+                                                <i class="fa fa-camera me-2"></i>Ajouter des photos après création
+                                            </label>
+                                            <div class="form-text text-muted">
+                                                Vous serez redirigé vers la page de gestion des photos après l'enregistrement
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-success" id="submitButton">Enregistrer</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="fa fa-times me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitButton">
+                            <i class="fa fa-save me-2"></i>
+                            <span id="submitButtonText">Enregistrer</span>
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center p-4">
+                    <div class="icon-wrapper-lg bg-danger bg-opacity-10 rounded-circle mb-3 mx-auto">
+                        <i class="fa fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <h5 class="mb-3">Confirmer la suppression</h5>
+                    <p class="text-muted mb-4" id="deleteMessage">
+                        Êtes-vous sûr de vouloir supprimer ce business ?
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <a href="#" class="btn btn-danger" id="confirmDeleteBtn">
+                            Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block stylesheets %}
+    <style>
+        /* Styles personnalisés */
+        .business-row:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+        }
+
+        .avatar-title {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .icon-wrapper-sm {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-wrapper-lg {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .select2-style {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+            background-size: 16px 12px;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-content {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+        }
+    </style>
 {% endblock %}
 
 {% block javascripts %}
     <script>
-        function openAddModal() {
-            document.getElementById('modalTitle').textContent = 'Ajouter Business';
-            document.getElementById('businessForm').action = "{{ path('business_add') }}";
-            document.getElementById('name').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('website').value = '';
-            document.getElementById('owner').value = '';
-            document.getElementById('category').value = '';
-            document.getElementById('description').value = '';
+        let currentBusinessId = null;
 
-            // décocher la case
+        function openAddModal() {
+            document.getElementById('modalTitleText').textContent = 'Ajouter Business';
+            document.getElementById('submitButtonText').textContent = 'Créer';
+            document.getElementById('businessForm').action = "{{ path('business_add') }}";
+
+            // Réinitialiser le formulaire
+            const form = document.getElementById('businessForm');
+            form.reset();
+
+            // Décocher la case
             const checkbox = document.getElementById('addPhotos');
             if (checkbox) checkbox.checked = false;
 
@@ -148,8 +388,13 @@
         }
 
         function openEditModal(id, name, address, phone, website, ownerId, categoryId, description) {
-            document.getElementById('modalTitle').textContent = 'Modifier Business';
+            currentBusinessId = id;
+
+            document.getElementById('modalTitleText').textContent = 'Modifier Business';
+            document.getElementById('submitButtonText').textContent = 'Mettre à jour';
             document.getElementById('businessForm').action = '/business/edit/' + id;
+
+            // Remplir les champs
             document.getElementById('name').value = name;
             document.getElementById('address').value = address;
             document.getElementById('phone').value = phone;
@@ -158,10 +403,67 @@
             document.getElementById('category').value = categoryId;
             document.getElementById('description').value = description;
 
+            // Décocher la case
             const checkbox = document.getElementById('addPhotos');
             if (checkbox) checkbox.checked = false;
 
             new bootstrap.Modal(document.getElementById('businessModal')).show();
         }
+
+        function confirmDelete(id, name) {
+            document.getElementById('deleteMessage').innerHTML =
+                `Êtes-vous sûr de vouloir supprimer <strong>"${name}"</strong> ?<br><small class="text-danger">Cette action est irréversible.</small>`;
+
+            document.getElementById('confirmDeleteBtn').href = `/business/delete/${id}`;
+
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.business-row');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        // Animation des lignes au survol
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('.business-row');
+            rows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateX(4px)';
+                    this.style.transition = 'all 0.2s ease';
+                });
+
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateX(0)';
+                });
+
+                // Cliquer sur la ligne (sauf les boutons) pour voir les détails
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('button') && !e.target.closest('a')) {
+                        // Récupérer l'ID du business (à adapter selon votre structure)
+                        const businessId = this.dataset.id;
+                        if (businessId) {
+                            window.location.href = `/business/${businessId}`;
+                        }
+                    }
+                });
+            });
+
+            // Gestion du formulaire
+            const businessForm = document.getElementById('businessForm');
+            if (businessForm) {
+                businessForm.addEventListener('submit', function(e) {
+                    const submitBtn = document.getElementById('submitButton');
+                    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Enregistrement...';
+                    submitBtn.disabled = true;
+                });
+            }
+        });
     </script>
 {% endblock %}
