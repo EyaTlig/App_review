@@ -1,0 +1,44 @@
+# Fichiers et dossiers Git
+.git
+.gitignore
+.gitattributes
+
+# Configuration locale
+.env.local
+.env.*.local
+
+# Cache et logs Symfony
+var/cache/*
+var/log/*
+var/sessions/*
+
+# Dépendances
+vendor/
+node_modules/
+
+# IDE et éditeurs
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Tests
+tests/
+phpunit.xml.dist
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+
+# Docker
+docker/
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Autres
+.php_cs.cache
+.phpunit.result.cache
